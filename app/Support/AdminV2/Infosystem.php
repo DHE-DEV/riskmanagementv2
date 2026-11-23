@@ -31,35 +31,27 @@ class Infosystem
         'Gesundheit' => 'health',
     ];
 
-    /** Aelterer "tagtype" des Infosystems => Code des Event-Typs */
-    public const TAGTYPE_CODES = [
-        1 => 'environment',
-        2 => 'travel',
-        3 => 'safety',
-        4 => 'entry',
-        5 => 'general',
-        6 => 'health',
-    ];
-
     /**
-     * Anzeigefarbe des Infosystems ("appearance", gepflegt in pds-admin) =>
-     * Risikostufe eines Ereignisses. Es werden nur die bestehenden Stufen aus
-     * CustomEvent::getPriorityOptions() vorgeschlagen; 0 = keine Farbe.
+     * Stufe des Infosystems ("tagtype", in pds-admin als Farbe gepflegt) =>
+     * Risikostufe eines Ereignisses. Die Werte entsprechen der Anzeige auf der
+     * Homepage (1 Allgemein, 2 Information, 3 Niedrig, 4 Mittel, 5 Hoch);
+     * "Allgemein" hat keine Entsprechung. Das Feld "appearance" stammt aus dem
+     * alten Editor und ist bei allen Eintraegen 0.
      */
-    public const APPEARANCE_PRIORITIES = [
-        1 => 'low',     // gruen
-        2 => 'info',    // blau
-        3 => 'medium',  // gelb
-        4 => 'high',    // rot
+    public const TAGTYPE_PRIORITIES = [
+        2 => 'info',    // Information, blau
+        3 => 'low',     // Niedrig, gruen
+        4 => 'medium',  // Mittel, gelb
+        5 => 'high',    // Hoch, rot
     ];
 
     /**
-     * Die vorgeschlagene Risikostufe eines Eintrags, oder null, wenn im
-     * Infosystem keine Anzeigefarbe hinterlegt ist.
+     * Die vorgeschlagene Risikostufe eines Eintrags, oder null, wenn die
+     * Stufe im Infosystem keiner Risikostufe entspricht.
      */
     public static function priority(InfosystemEntry $entry): ?string
     {
-        return self::APPEARANCE_PRIORITIES[(int) $entry->appearance] ?? null;
+        return self::TAGTYPE_PRIORITIES[(int) $entry->tagtype] ?? null;
     }
 
     /**
@@ -104,8 +96,8 @@ class Infosystem
     }
 
     /**
-     * Die Event-Typen eines Eintrags: aus seinen Rubriken, ersatzweise aus
-     * dem aelteren "tagtype"; passt nichts, gilt "Allgemein".
+     * Die Event-Typen eines Eintrags: aus seinen Rubriken; passt nichts,
+     * gilt "Allgemein". Der "tagtype" ist die Stufe, kein Event-Typ.
      *
      * @return array<int, int>
      */
@@ -118,10 +110,6 @@ class Infosystem
             ->filter()
             ->unique()
             ->values();
-
-        if ($codes->isEmpty() && $entry->tagtype !== null && isset(self::TAGTYPE_CODES[(int) $entry->tagtype])) {
-            $codes = collect([self::TAGTYPE_CODES[(int) $entry->tagtype]]);
-        }
 
         $ids = $codes->isEmpty()
             ? collect()

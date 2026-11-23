@@ -229,6 +229,7 @@ it('legt aus einem Eintrag ein vorbelegtes Ereignis an und markiert den Eintrag 
     $entry = InfosystemEntry::factory()->create([
         'api_id' => 7001,
         'appearance' => 0,
+        'tagtype' => 4,
         'header' => 'Italien - Streik im Nahverkehr',
         'content' => "Der Nahverkehr steht still.\n\nBetroffen sind Bus und Bahn.",
         'country_code' => 'IT',
@@ -282,19 +283,20 @@ it('legt aus einem Eintrag ein vorbelegtes Ereignis an und markiert den Eintrag 
         ->assertSet('titles.de', '');
 });
 
-it('schlaegt die Risikostufe aus der Anzeigefarbe des Infosystems vor', function (int $appearance, string $priority) {
-    InfosystemEntry::factory()->create(['api_id' => 7100 + $appearance, 'appearance' => $appearance]);
+it('schlaegt die Risikostufe aus der Stufe des Infosystems vor', function (int $tagtype, string $priority) {
+    // "appearance" ist im Infosystem immer 0 – massgeblich ist der tagtype.
+    InfosystemEntry::factory()->create(['api_id' => 7100 + $tagtype, 'tagtype' => $tagtype, 'appearance' => 0]);
 
     $this->actingAs(infosystemAdmin());
 
-    Livewire::withQueryParams(['infosystem' => 7100 + $appearance])
+    Livewire::withQueryParams(['infosystem' => 7100 + $tagtype])
         ->test(Editor::class)
         ->assertSet('priority', $priority);
 })->with([
-    'keine Farbe' => [0, 'medium'],
-    'gruen' => [1, 'low'],
-    'blau' => [2, 'info'],
-    'gelb' => [3, 'medium'],
-    'rot' => [4, 'high'],
-    'unbekannte Farbe' => [9, 'medium'],
+    'Allgemein' => [1, 'medium'],
+    'Information' => [2, 'info'],
+    'Niedrig' => [3, 'low'],
+    'Mittel' => [4, 'medium'],
+    'Hoch' => [5, 'high'],
+    'unbekannte Stufe' => [9, 'medium'],
 ]);

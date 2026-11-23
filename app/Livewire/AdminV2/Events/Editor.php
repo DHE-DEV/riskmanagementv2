@@ -150,7 +150,7 @@ class Editor extends Component
     /**
      * Ein neues Ereignis aus einem Eintrag des Passolution Infosystems: Titel,
      * Beschreibung, Datum, Land und Event-Typen sind vorbelegt – wie im
-     * bisherigen Admin –, dazu die Risikostufe aus der Anzeigefarbe. Ist der Eintrag schon veroeffentlicht, bleibt das
+     * bisherigen Admin –, dazu die Risikostufe aus der Stufe des Eintrags. Ist der Eintrag schon veroeffentlicht, bleibt das
      * Formular leer.
      */
     protected function prefillFromInfosystem(int $apiId): void
@@ -173,7 +173,7 @@ class Editor extends Component
 
         $this->eventTypeIds = array_map('strval', Infosystem::eventTypeIds($entry));
 
-        // Risikostufe aus der Anzeigefarbe – nur eine der bestehenden Stufen.
+        // Risikostufe aus der Stufe (tagtype) – nur eine der bestehenden Stufen.
         $priority = Infosystem::priority($entry);
         if ($priority !== null && array_key_exists($priority, CustomEvent::getPriorityOptions())) {
             $this->priority = $priority;
