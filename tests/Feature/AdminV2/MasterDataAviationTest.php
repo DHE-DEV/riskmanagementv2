@@ -542,7 +542,7 @@ it('gliedert Ergebnisse der KI statt alles hintereinander zu schreiben', functio
     config(['services.openai.key' => 'test-key']);
     Http::fake(['api.openai.com/*' => Http::response([
         'model' => 'gpt-4o-mini',
-        'choices' => [['message' => ['content' => json_encode(['summary' => 'Gepäckregeln fehlen.', 'fields' => [
+        'output' => [['type' => 'message', 'content' => [['type' => 'output_text', 'text' => json_encode(['summary' => 'Gepäckregeln fehlen.', 'fields' => [
             'baggage_checked_economy' => ['status' => 'change', 'value' => '1 × 23 kg', 'note' => 'Stand laut Website.'],
             'baggage_checked_business' => ['status' => 'change', 'value' => '2 × 32 kg'],
             'baggage_checked_first' => ['status' => 'ok', 'note' => 'Wird nicht angeboten.'],
@@ -551,8 +551,8 @@ it('gliedert Ergebnisse der KI statt alles hintereinander zu schreiben', functio
             'baggage_hand_premium_economy_width' => ['status' => 'change', 'value' => '40'],
             'baggage_notes' => ['status' => 'change', 'value' => "Sperrgepäck: vorher anmelden\nSportgepäck: gegen Gebühr"],
             'baggage_info_url' => ['status' => 'change', 'value' => 'https://www.eurowings.com/gepaeck'],
-        ]], JSON_UNESCAPED_UNICODE)]]],
-        'usage' => ['prompt_tokens' => 100, 'completion_tokens' => 40, 'total_tokens' => 140],
+        ]], JSON_UNESCAPED_UNICODE)]]]],
+        'usage' => ['input_tokens' => 100, 'output_tokens' => 40, 'total_tokens' => 140],
     ])]);
 
     $ew = airline('Eurowings', 'EW');
@@ -596,7 +596,7 @@ it('laesst die KI jedes Feld der Haustiermitnahme pruefen und uebernimmt die Vor
     config(['services.openai.key' => 'test-key']);
     Http::fake(['api.openai.com/*' => Http::response([
         'model' => 'gpt-4o-mini',
-        'choices' => [['message' => ['content' => json_encode(['summary' => 'Haustiere dürfen mitreisen.', 'fields' => [
+        'output' => [['type' => 'message', 'content' => [['type' => 'output_text', 'text' => json_encode(['summary' => 'Haustiere dürfen mitreisen.', 'fields' => [
             'pets_allowed' => $change('Ja'),
             'pets_cabin_allowed' => $change('Ja'),
             'pets_cabin_max_weight' => $change('8 kg'),
@@ -613,8 +613,8 @@ it('laesst die KI jedes Feld der Haustiermitnahme pruefen und uebernimmt die Vor
             'pets_restrictions' => $change('Rasseeinschränkungen, Assistenztiere erlaubt'),
             'pets_info_url' => $change('https://www.eurowings.com/tiere'),
             'pets_notes' => $change('Anmeldung spätestens 48 Stunden vor Abflug.'),
-        ]], JSON_UNESCAPED_UNICODE)]]],
-        'usage' => ['prompt_tokens' => 300, 'completion_tokens' => 120, 'total_tokens' => 420],
+        ]], JSON_UNESCAPED_UNICODE)]]]],
+        'usage' => ['input_tokens' => 300, 'output_tokens' => 120, 'total_tokens' => 420],
     ])]);
 
     $ew = airline('Eurowings', 'EW');
@@ -685,7 +685,7 @@ it('prueft Lounges und Hotels je Eintrag und Feld und zeigt die Hinweise unter d
     config(['services.openai.key' => 'test-key']);
     Http::fake(['api.openai.com/*' => Http::response([
         'model' => 'gpt-4o-mini',
-        'choices' => [['message' => ['content' => json_encode(['summary' => 'Eine Lounge fehlt.', 'fields' => [
+        'output' => [['type' => 'message', 'content' => [['type' => 'output_text', 'text' => json_encode(['summary' => 'Eine Lounge fehlt.', 'fields' => [
             'lounge_0_name' => $ok,
             'lounge_0_location' => ['status' => 'change', 'value' => 'Terminal 2, Ebene 3', 'note' => 'Die Lounge ist umgezogen.'],
             'lounge_0_access' => $ok,
@@ -694,8 +694,8 @@ it('prueft Lounges und Hotels je Eintrag und Feld und zeigt die Hinweise unter d
             'lounge_0_children_welcome' => ['status' => 'change', 'value' => 'Ja'],
             'lounge_1_name' => ['status' => 'unknown', 'note' => 'Die Lounge gibt es laut Website nicht mehr.'],
             'lounges_new' => ['status' => 'change', 'value' => "Airport Lounge World; Terminal 1; Priority Pass; 35; https://lounge.example\n- Business Lounge; Terminal 2\nSenator Lounge", 'note' => 'Zwei Lounges fehlen.'],
-        ]], JSON_UNESCAPED_UNICODE)]]],
-        'usage' => ['prompt_tokens' => 200, 'completion_tokens' => 80, 'total_tokens' => 280],
+        ]], JSON_UNESCAPED_UNICODE)]]]],
+        'usage' => ['input_tokens' => 200, 'output_tokens' => 80, 'total_tokens' => 280],
     ])]);
 
     $germany = aviationCountry('Deutschland', 'DE');
@@ -778,7 +778,7 @@ it('prueft die Mobilitaetsangebote je Angebot und Feld', function () {
     config(['services.openai.key' => 'test-key']);
     Http::fake(['api.openai.com/*' => Http::response([
         'model' => 'gpt-4o-mini',
-        'choices' => [['message' => ['content' => json_encode(['summary' => 'Taxi und Parken fehlen.', 'fields' => [
+        'output' => [['type' => 'message', 'content' => [['type' => 'output_text', 'text' => json_encode(['summary' => 'Taxi und Parken fehlen.', 'fields' => [
             'mobility_car_rental_available' => $ok,
             'mobility_car_rental_0_url' => ['status' => 'change', 'value' => 'https://www.sixt.de/cgn', 'note' => 'Die Adresse fehlt.'],
             'mobility_car_rental_new' => ['status' => 'change', 'value' => "Europcar; https://www.europcar.de\nSixt; https://doppelt.example"],
@@ -788,8 +788,8 @@ it('prueft die Mobilitaetsangebote je Angebot und Feld', function () {
             'mobility_parking_available' => ['status' => 'change', 'value' => 'Ja'],
             'mobility_parking_new' => ['status' => 'change', 'value' => 'P1; 2 Minuten; ab 5 € je Stunde; https://parken.example'],
             'mobility_public_transport_available' => ['status' => 'unknown', 'note' => 'Nicht geprüft.'],
-        ]], JSON_UNESCAPED_UNICODE)]]],
-        'usage' => ['prompt_tokens' => 200, 'completion_tokens' => 80, 'total_tokens' => 280],
+        ]], JSON_UNESCAPED_UNICODE)]]]],
+        'usage' => ['input_tokens' => 200, 'output_tokens' => 80, 'total_tokens' => 280],
     ])]);
 
     $germany = aviationCountry('Deutschland', 'DE');
@@ -832,7 +832,7 @@ it('prueft die Mobilitaetsangebote je Angebot und Feld', function () {
         ->assertSet('mobility.parking.available', true)
         ->assertSet('mobility.parking.options.0', ['name' => 'P1', 'distance' => '2 Minuten', 'price_info' => 'ab 5 € je Stunde', 'url' => 'https://parken.example'])
         // Mit "verfuegbar" stehen die Hinweise auch unter den Feldern des Angebots.
-        ->assertSeeHtml("mobility.taxi.info")
+        ->assertSeeHtml('mobility.taxi.info')
         ->call('save')
         ->assertHasNoErrors();
 

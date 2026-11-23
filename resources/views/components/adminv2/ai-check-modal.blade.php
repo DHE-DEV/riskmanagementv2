@@ -8,6 +8,8 @@
     - noteKeys: Felder mit Notiz – die Begruendung der KI laesst sich dorthin uebernehmen
     - promptDraft: Prompt der gewaehlten Pruefung fuer diesen Lauf ($aiPromptDraft) – anpassbar,
       ohne die hinterlegte Pruefung zu aendern
+    - openReviews / finishedReviews: wartende bzw. fertige, noch nicht geoeffnete Auftraege
+      der Feldpruefung zu diesem Eintrag ($this->aiOpenReviews / $this->aiFinishedReviews)
 --}}
 @props([
     'area',
@@ -23,6 +25,8 @@
     'review' => null,
     'noteKeys' => [],
     'promptDraft' => '',
+    'openReviews' => collect(),
+    'finishedReviews' => collect(),
 ])
 
 @php
@@ -33,6 +37,7 @@
     $promptEdited = $chosen && trim((string) $promptDraft) !== trim((string) $chosen->prompt);
     $custom = $checkId === 'custom';
     $reviewMode = $checkId === 'review';
+    $reviewRunningHere = $openReviews->contains('section', $section);
     $canReview = $section !== '' && $section !== AiAreas::GENERAL;
     $reviewFields = $review && ($review['section'] ?? null) === $section ? $review['fields'] : [];
     $openSuggestions = collect($reviewFields)->filter(fn ($field) => $field['status'] === 'change' && ! ($field['applied'] ?? false))->count();
@@ -49,6 +54,9 @@
     $sectionLabel = $section !== '' ? AiAreas::sectionLabel($area, $section) : '';
     $manageUrl = route('adminv2.system.ai', ['tab' => $area]);
 @endphp
+
+{{-- Beim Laden einen per Link angeforderten Auftrag oeffnen; solange Auftraege offen sind, abfragen. --}}
+<div wire:init="openRequestedAiReview" @if ($openReviews->isNotEmpty()) wire:poll.5s="checkAiReviews" @endif class="hidden"></div>
 
 <flux:modal name="ai-check" class="max-w-3xl md:w-[48rem]">
     {{-- "busy" zeigt waehrend des Laufs deutlich, dass die KI arbeitet, und sperrt die Schaltflaechen gegen Doppelklicks. --}}
@@ -100,7 +108,7 @@
                     <input type="radio" wire:model.live="aiCheckId" value="review" x-bind:disabled="busy" class="mt-1 size-4 shrink-0 accent-[var(--color-accent)]" />
                     <span class="min-w-0 flex-1">
                         <span class="text-sm font-medium text-zinc-900 dark:text-white">Felder automatisch prüfen</span>
-                        <span class="mt-0.5 block text-sm text-zinc-600 dark:text-zinc-400">Die KI bewertet jedes Feld dieses Abschnitts: korrekt, Vorschlag oder nicht prüfbar. Vorschläge lassen sich einzeln oder alle übernehmen.</span>
+                        <span class="mt-0.5 block text-sm text-zinc-600 dark:text-zinc-400">Die KI recherchiert im Internet und bewertet jedes Feld dieses Abschnitts: korrekt, Vorschlag oder nicht prüfbar. Leere Felder werden gefüllt, Texte für Reisende in eigenen Worten formuliert – mit Quellen. Vorschläge lassen sich einzeln oder alle übernehmen.</span>
                     </span>
                 </label>
             @endif
@@ -206,8 +214,8 @@
 
             <div class="flex flex-wrap items-center gap-3">
                 @if ($reviewMode)
-                    <flux:button variant="primary" icon="sparkles" x-on:click="run('reviewAiFields')" x-bind:disabled="busy">
-                        <span x-show="! busy">Felder prüfen</span><span x-show="busy" x-cloak>Die KI prüft …</span>
+                    <flux:button variant="primary" icon="sparkles" x-on:click="run('reviewAiFields')" x-bind:disabled="busy || {{ $reviewRunningHere ? 'true' : 'false' }}">
+                        @if ($reviewRunningHere) Läuft bereits … @else Felder prüfen (im Hintergrund) @endif
                     </flux:button>
                 @else
                     <flux:button variant="primary" icon="sparkles" x-on:click="run('runAiCheck')" x-bind:disabled="busy || {{ (! $chosen && ! $custom) ? 'true' : 'false' }}">
@@ -217,6 +225,41 @@
                 <flux:spacer />
                 <a href="{{ $manageUrl }}" target="_blank" class="text-xs text-zinc-500 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900 dark:hover:text-white">Prüfungen verwalten</a>
             </div>
+
+            {{-- Auftraege der Feldpruefung zu diesem Eintrag: laufen im Hintergrund, mehrere zugleich --}}
+            @if ($openReviews->isNotEmpty() || $finishedReviews->isNotEmpty())
+                <div class="flex flex-col gap-2 rounded-xl border border-zinc-200 px-4 py-3 text-sm dark:border-zinc-800" role="status">
+                    <p class="text-xs font-semibold tracking-wide text-zinc-500 uppercase">Feldprüfungen zu diesem Eintrag</p>
+                    @foreach ($openReviews as $openReview)
+                        <div wire:key="open-review-{{ $openReview->id }}" class="flex items-center gap-3">
+                            <flux:icon.arrow-path variant="mini" @class(['shrink-0 text-[var(--color-accent)]', 'animate-spin' => $openReview->status === 'running']) />
+                            <span class="flex-1 text-zinc-800 dark:text-zinc-200">
+                                {{ $openReview->sectionLabel() }}
+                                <span class="text-xs text-zinc-500">
+                                    @if ($openReview->status === 'running')
+                                        · recherchiert seit {{ $openReview->started_at->diffForHumans(syntax: \Carbon\CarbonInterface::DIFF_ABSOLUTE) }} (meist 1–3 Minuten)
+                                    @else
+                                        · wartet auf Bearbeitung
+                                    @endif
+                                </span>
+                            </span>
+                            <flux:button size="xs" variant="ghost" wire:click="cancelAiReview({{ $openReview->id }})">Abbrechen</flux:button>
+                        </div>
+                    @endforeach
+                    @foreach ($finishedReviews as $finishedReview)
+                        <div wire:key="finished-review-{{ $finishedReview->id }}" class="flex items-center gap-3">
+                            @if ($finishedReview->failureMessage())
+                                <flux:icon.exclamation-triangle variant="mini" class="shrink-0 text-red-600" />
+                            @else
+                                <flux:icon.check-circle variant="mini" class="shrink-0 text-green-600" />
+                            @endif
+                            <span class="flex-1 text-zinc-800 dark:text-zinc-200">{{ $finishedReview->sectionLabel() }} <span class="text-xs text-zinc-500">· {{ $finishedReview->failureMessage() ? 'fehlgeschlagen' : 'fertig' }} {{ $finishedReview->finished_at?->diffForHumans() }}</span></span>
+                            <flux:button size="xs" wire:click="openAiReview({{ $finishedReview->id }})">Öffnen</flux:button>
+                        </div>
+                    @endforeach
+                    <p class="text-xs text-zinc-500">Du kannst weitere Abschnitte und Einträge einreichen und die Seite verlassen – fertige Prüfungen erscheinen unter „KI-Aufträge“ im Menü.</p>
+                </div>
+            @endif
 
             {{-- Deutlich sichtbarer Fortschritt waehrend des Laufs --}}
             <div x-show="busy" x-cloak class="rounded-xl border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 px-4 py-3">
@@ -283,6 +326,14 @@
                                                 @if ($field['note'])
                                                     <span class="mt-1 block text-xs break-words whitespace-pre-line text-zinc-500">{{ $field['note'] }}</span>
                                                 @endif
+                                                @if (($field['sources'] ?? []) !== [])
+                                                    <span class="mt-1 flex flex-wrap gap-x-2 text-xs text-zinc-500">
+                                                        Quellen:
+                                                        @foreach ($field['sources'] as $url)
+                                                            <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" class="underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900 dark:hover:text-white">{{ preg_replace('/^www\./', '', parse_url($url, PHP_URL_HOST) ?: $url) }}</a>
+                                                        @endforeach
+                                                    </span>
+                                                @endif
                                             </span>
                                             <span class="flex flex-col items-end gap-1">
                                                 @if ($field['status'] === 'change')
@@ -306,6 +357,17 @@
                             </div>
                         @endforeach
                     </div>
+
+                    @if (($review['sources'] ?? []) !== [])
+                        <details class="mt-3 text-xs text-zinc-500">
+                            <summary class="cursor-pointer hover:text-zinc-900 dark:hover:text-white">Besuchte Quellen ({{ count($review['sources']) }})</summary>
+                            <ul class="mt-1 flex flex-col gap-0.5">
+                                @foreach ($review['sources'] as $source)
+                                    <li wire:key="review-source-{{ $loop->index }}" class="truncate"><a href="{{ $source['url'] }}" target="_blank" rel="noopener noreferrer" class="underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900 dark:hover:text-white">{{ $source['title'] ?: $source['url'] }}</a></li>
+                                @endforeach
+                            </ul>
+                        </details>
+                    @endif
 
                     @if ($review['usage'] ?? null)
                         <p class="mt-3 border-t border-zinc-100 pt-3 text-xs text-zinc-500 dark:border-zinc-800">

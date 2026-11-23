@@ -157,6 +157,8 @@
                 </flux:navlist.item>
             </flux:navlist>
 
+            <livewire:admin-v2.ai-review-tray />
+
             <flux:dropdown position="top" align="start" class="max-lg:hidden">
                 <flux:profile :name="$user?->name" :initials="\Illuminate\Support\Str::of($user?->name)->explode(' ')->map(fn ($part) => mb_substr($part, 0, 1))->take(2)->implode('')" icon-trailing="chevron-up-down" />
 

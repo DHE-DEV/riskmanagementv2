@@ -17,6 +17,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Queue der KI-Feldpruefungen
+    |--------------------------------------------------------------------------
+    |
+    | Feldpruefungen mit Websuche dauern bis zu fuenf Minuten. Eine eigene
+    | Queue (z. B. "ai" mit eigenem Worker) haelt sie von den uebrigen Jobs
+    | fern; ohne Angabe laufen sie auf der Standard-Queue.
+    |
+    */
+
+    'ai_queue' => env('AI_QUEUE', 'default'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Queue Connections
     |--------------------------------------------------------------------------
     |

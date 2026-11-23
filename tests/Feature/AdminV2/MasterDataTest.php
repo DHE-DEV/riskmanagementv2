@@ -1,5 +1,7 @@
 <?php
 
+use App\Jobs\ReviewAiFieldsJob;
+use App\Livewire\AdminV2\AiReviewTray;
 use App\Livewire\AdminV2\MasterData\Cities\Editor as CityEditor;
 use App\Livewire\AdminV2\MasterData\Cities\Index as CityIndex;
 use App\Livewire\AdminV2\MasterData\Continents\Editor as ContinentEditor;
@@ -9,17 +11,20 @@ use App\Livewire\AdminV2\MasterData\Countries\Index as CountryIndex;
 use App\Livewire\AdminV2\MasterData\Regions\Editor as RegionEditor;
 use App\Livewire\AdminV2\MasterData\Regions\Index as RegionIndex;
 use App\Models\AiCheck;
+use App\Models\AiFieldReview;
 use App\Models\City;
 use App\Models\Continent;
 use App\Models\Country;
 use App\Models\Region;
 use App\Models\User;
+use App\Services\AiFieldReviewService;
 use App\Support\AdminV2\AiAreas;
 use App\Support\AdminV2\Coordinates;
 use App\Support\AdminV2\CountryRiskProfile;
 use App\Support\AdminV2\MasterData;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 /**
@@ -919,7 +924,7 @@ it('laesst die KI die Felder eines Abschnitts pruefen und uebernimmt Vorschlaege
     config(['services.openai.key' => 'test-key']);
     Http::fake(['api.openai.com/*' => Http::response([
         'model' => 'gpt-4o-2024-08-06',
-        'choices' => [['message' => ['content' => "```json\n".json_encode([
+        'output' => [['type' => 'message', 'content' => [['type' => 'output_text', 'text' => "```json\n".json_encode([
             'summary' => 'Zwei Angaben weichen ab.',
             'fields' => [
                 'currency_code' => ['status' => 'ok', 'note' => 'EUR ist richtig.'],
@@ -930,8 +935,8 @@ it('laesst die KI die Felder eines Abschnitts pruefen und uebernimmt Vorschlaege
                 'population' => ['status' => 'change', 'value' => '83.200.000', 'note' => 'Stand 2024.'],
                 'area_km2' => ['status' => 'change'],
             ],
-        ], JSON_UNESCAPED_UNICODE)."\n```"]]],
-        'usage' => ['prompt_tokens' => 200, 'completion_tokens' => 80, 'total_tokens' => 280],
+        ], JSON_UNESCAPED_UNICODE)."\n```"]]]],
+        'usage' => ['input_tokens' => 200, 'output_tokens' => 80, 'total_tokens' => 280],
     ])]);
 
     $europe = continent('Europa', 'EU');
@@ -967,9 +972,9 @@ it('laesst die KI die Felder eines Abschnitts pruefen und uebernimmt Vorschlaege
         ->and($review['fields']['area_km2']['status'])->toBe('unknown');
 
     Http::assertSent(fn ($request) => ($request->data()['model'] ?? null) === 'gpt-4o-mini'
-        && str_contains($request->data()['messages'][0]['content'] ?? '', 'currency_code („Währungscode“): EUR')
-        && str_contains($request->data()['messages'][0]['content'] ?? '', 'Name: Deutschland')
-        && str_contains($request->data()['messages'][0]['content'] ?? '', 'Antworte ausschließlich mit JSON'));
+        && str_contains($request->data()['input'] ?? '', 'currency_code („Währungscode“): EUR')
+        && str_contains($request->data()['input'] ?? '', 'Name: Deutschland')
+        && str_contains($request->data()['input'] ?? '', 'Antworte ausschließlich mit JSON'));
 
     // Einzeln uebernehmen – Zahlen ohne Tausenderpunkte.
     $component->call('applyAiSuggestion', 'population')
@@ -995,6 +1000,171 @@ it('laesst die KI die Felder eines Abschnitts pruefen und uebernimmt Vorschlaege
         ->and($germany->fresh()->population)->toBe(83200000);
 
     $component->call('dismissAiReview')->assertSet('aiReview', null);
+});
+
+it('recherchiert bei der Feldpruefung im Internet, zeigt Quellen und entfernt Quellenverweise aus den Texten', function () {
+    config(['services.openai.key' => 'test-key']);
+    Http::fake(['api.openai.com/*' => Http::response([
+        'model' => 'gpt-4o-2024-08-06',
+        'output' => [
+            ['type' => 'web_search_call', 'action' => ['sources' => [['url' => 'https://www.worldstandards.eu/strom/?utm_source=openai', 'title' => 'Steckdosen weltweit']]]],
+            ['type' => 'message', 'content' => [['type' => 'output_text', 'text' => json_encode([
+                'summary' => 'Angaben zum Strom ergänzt.',
+                'fields' => [
+                    'voltage' => ['status' => 'change', 'value' => '230', 'sources' => ['https://www.auswaertiges-amt.de/de/testland?utm_source=openai', 'keine-adresse']],
+                    'power_notes_de' => ['status' => 'change', 'value' => 'Für deutsche Geräte reicht meist kein Adapter ([auswaertiges-amt.de](https://www.auswaertiges-amt.de/de/testland)).', 'note' => 'Laut [Auswärtigem Amt](https://www.auswaertiges-amt.de/x) Typ C/F.'],
+                ],
+            ], JSON_UNESCAPED_UNICODE)]]],
+        ],
+        'usage' => ['input_tokens' => 900, 'output_tokens' => 150, 'total_tokens' => 1050],
+    ])]);
+
+    $country = country('Testland', 'TL', continent('Europa', 'EU'));
+
+    $component = Livewire::test(CountryEditor::class, ['country' => $country->id])
+        ->call('openAiCheck', 'power')
+        ->set('aiCheckId', 'review')
+        ->call('reviewAiFields')
+        ->assertSet('aiError', null)
+        ->assertSet('aiReviewRun', null)
+        ->assertSee('Besuchte Quellen (1)')
+        ->assertSee('auswaertiges-amt.de');
+
+    expect($component->get('aiReview.fields.voltage.sources'))->toBe(['https://www.auswaertiges-amt.de/de/testland'])
+        ->and($component->get('aiReview.fields.power_notes_de.value'))->toBe('Für deutsche Geräte reicht meist kein Adapter.')
+        ->and($component->get('aiReview.fields.power_notes_de.note'))->toBe('Laut Auswärtigem Amt Typ C/F.')
+        ->and($component->get('aiReview.sources'))->toBe([['url' => 'https://www.worldstandards.eu/strom/', 'title' => 'Steckdosen weltweit']]);
+
+    // Websuche statt reinem Chat – mit Recherche- und Schreibregeln.
+    Http::assertSent(fn ($request) => str_ends_with($request->url(), '/v1/responses')
+        && ($request->data()['tools'][0]['type'] ?? null) === 'web_search'
+        && str_contains($request->data()['input'], 'Formuliere vollständig in eigenen Worten')
+        && str_contains($request->data()['input'], 'Schreibe für Reisende'));
+});
+
+it('nimmt mehrere Feldpruefungen gleichzeitig als Auftraege an und weist nur denselben Abschnitt doppelt ab', function () {
+    Queue::fake();
+    $europe = continent('Europa', 'EU');
+    $testland = country('Testland', 'TL', $europe);
+    $otherland = country('Anderland', 'AL', $europe);
+
+    $component = Livewire::test(CountryEditor::class, ['country' => $testland->id])
+        ->call('openAiCheck', 'power')->set('aiCheckId', 'review')->call('reviewAiFields')
+        ->assertSet('aiError', null)
+        ->call('openAiCheck', 'details')->set('aiCheckId', 'review')->call('reviewAiFields')
+        ->assertSet('aiError', null)
+        ->assertSee('wartet auf Bearbeitung');
+
+    // Derselbe Abschnitt, solange er offen ist: abgewiesen.
+    $component->call('openAiCheck', 'power')->set('aiCheckId', 'review')->call('reviewAiFields');
+    expect($component->get('aiError'))->toContain('läuft bereits');
+
+    // Ein anderer Eintrag zur selben Zeit.
+    Livewire::test(CountryEditor::class, ['country' => $otherland->id])
+        ->call('openAiCheck', 'power')->set('aiCheckId', 'review')->call('reviewAiFields')
+        ->assertSet('aiError', null);
+
+    Queue::assertPushed(ReviewAiFieldsJob::class, 3);
+    Queue::assertPushed(ReviewAiFieldsJob::class, fn (ReviewAiFieldsJob $job) => isset($job->labels['power_notes_de']) && ! isset($job->labels['currency_code']));
+
+    $review = AiFieldReview::query()->where('subject_id', $testland->id)->where('section', 'power')->sole();
+    expect($review->status)->toBe(AiFieldReview::STATUS_QUEUED)
+        ->and($review->title)->toBe('Testland')
+        ->and($review->openUrl())->toEndWith('?ki-pruefung='.$review->id);
+
+    // Auf der echten Seite merkt sich das Formular deren Pfad fuer den Link.
+    $this->get('/adminv2/master-data/countries/'.$testland->id)
+        ->assertSee('"aiPageUrl":"\\/adminv2\\/master-data\\/countries\\/'.$testland->id.'"');
+
+    // Zuruecknehmen gibt den Abschnitt wieder frei.
+    $component->call('cancelAiReview', $review->id)
+        ->call('reviewAiFields')
+        ->assertSet('aiError', null);
+    expect(AiFieldReview::find($review->id))->toBeNull();
+});
+
+it('bearbeitet einen Auftrag nur einmal und haelt Fehler und abgebrochene Laeufe fest', function () {
+    config(['services.openai.key' => 'test-key']);
+    Http::fake(['api.openai.com/*' => Http::response(['error' => ['message' => 'Rate limit']], 429)]);
+    $review = AiFieldReview::create(['user_id' => auth('web')->id(), 'area' => 'countries', 'section' => 'power', 'status' => AiFieldReview::STATUS_QUEUED]);
+    $job = new ReviewAiFieldsJob($review->id, [], ['voltage' => 'Netzspannung (V)'], [], []);
+
+    $job->handle(app(AiFieldReviewService::class));
+    // Die Queue liefert den Auftrag erneut aus: keine zweite Anfrage.
+    $job->handle(app(AiFieldReviewService::class));
+
+    Http::assertSentCount(1);
+    expect($review->fresh()->status)->toBe(AiFieldReview::STATUS_FAILED)
+        ->and($review->fresh()->failureMessage())->toContain('Rate limit');
+
+    // Ein Lauf, der haengen bleibt, gilt nach 10 Minuten als abgebrochen und gibt den Abschnitt frei.
+    $stuck = AiFieldReview::create(['user_id' => auth('web')->id(), 'area' => 'countries', 'section' => 'details', 'status' => AiFieldReview::STATUS_RUNNING, 'started_at' => now()->subMinutes(11)]);
+    expect($stuck->isOpen())->toBeFalse()
+        ->and($stuck->failureMessage())->toContain('abgebrochen')
+        ->and(AiFieldReview::query()->open()->whereKey($stuck->id)->exists())->toBeFalse();
+});
+
+it('bringt fertige Auftraege ins Formular, haelt weitere zum Oeffnen bereit und oeffnet sie per Link', function () {
+    Queue::fake();
+    $country = country('Testland', 'TL', continent('Europa', 'EU'));
+    $finished = fn (string $section, array $fields, ?int $userId = null) => AiFieldReview::create([
+        'user_id' => $userId ?? auth('web')->id(), 'area' => 'countries', 'section' => $section,
+        'subject_type' => $country->getMorphClass(), 'subject_id' => $country->id, 'status' => AiFieldReview::STATUS_DONE,
+        'result' => ['fields' => $fields, 'summary' => null, 'sources' => [], 'usage' => null], 'finished_at' => now(),
+    ]);
+
+    $power = $finished('power', ['voltage' => ['status' => 'change', 'value' => '230', 'note' => null, 'sources' => []]]);
+    $details = $finished('details', ['currency_code' => ['status' => 'ok', 'value' => null, 'note' => null, 'sources' => []]]);
+    $foreign = $finished('coordinates', [], User::factory()->create()->id);
+
+    $component = Livewire::test(CountryEditor::class, ['country' => $country->id])
+        ->call('checkAiReviews');
+
+    // Eines kommt ins Formular, das andere wartet in der Liste; fremde Auftraege bleiben unberuehrt.
+    expect($component->get('aiReviewId'))->toBeIn([$power->id, $details->id])
+        ->and(AiFieldReview::whereNotNull('seen_at')->count())->toBe(1)
+        ->and($foreign->fresh()->seen_at)->toBeNull();
+    $component->assertDispatched('adminv2-toast');
+
+    $other = $component->get('aiReviewId') === $power->id ? $details : $power;
+    $component->call('openAiReview', $other->id)
+        ->assertSet('aiReviewId', $other->id)
+        ->assertSet('aiSection', $other->section)
+        ->assertSet('aiCheckId', 'review')
+        ->call('openAiReview', $foreign->id)
+        ->assertSet('aiReviewId', $other->id);
+
+    // Link aus "KI-Auftraege": die Seite oeffnet den Auftrag beim Laden.
+    $component->call('dismissAiReview');
+    $power->update(['seen_at' => null]);
+    Livewire::withQueryParams(['ki-pruefung' => $power->id])
+        ->test(CountryEditor::class, ['country' => $country->id])
+        ->call('openRequestedAiReview')
+        ->assertSet('aiReviewId', $power->id)
+        ->assertSet('aiReview.fields.voltage.value', '230')
+        ->call('applyAiSuggestion', 'voltage')
+        ->assertSet('aiReview.fields.voltage.applied', true);
+});
+
+it('zeigt die eigenen KI-Auftraege im Menue und meldet, wenn einer fertig wird', function () {
+    $review = AiFieldReview::create(['user_id' => auth('web')->id(), 'area' => 'countries', 'section' => 'power', 'title' => 'Testland', 'url' => '/adminv2/master-data/countries/1', 'status' => AiFieldReview::STATUS_RUNNING, 'started_at' => now()]);
+    AiFieldReview::create(['user_id' => User::factory()->create()->id, 'area' => 'countries', 'section' => 'details', 'title' => 'Fremdland', 'status' => AiFieldReview::STATUS_QUEUED]);
+
+    $tray = Livewire::test(AiReviewTray::class)
+        ->assertSee('Testland › Strom')
+        ->assertSee('recherchiert')
+        ->assertDontSee('Fremdland');
+
+    $review->update(['status' => AiFieldReview::STATUS_DONE, 'result' => ['fields' => []], 'finished_at' => now()]);
+
+    $tray->call('refresh')
+        ->assertDispatched('adminv2-toast', fn (string $name, array $params) => str_contains($params['message'], 'Testland › Strom'))
+        ->assertSee('1 fertig')
+        ->call('open', $review->id)
+        ->assertRedirect('/adminv2/master-data/countries/1?ki-pruefung='.$review->id);
+
+    $tray->call('markAllSeen')->assertDontSee('1 fertig');
+    expect($review->fresh()->seen_at)->not->toBeNull();
 });
 
 it('bietet Pruefungen "nur gesamter Eintrag" ausschliesslich im Kopf des Eintrags an', function () {
@@ -1072,7 +1242,7 @@ it('prueft das Risikoprofil je Bereich Feld fuer Feld und uebernimmt Stufen, Sch
     // Die KI bekommt nur die Felder des geoeffneten Bereichs – Antworten zu anderen Bereichen bleiben unberuecksichtigt.
     Http::fake(['api.openai.com/*' => Http::response([
         'model' => 'gpt-4o-2024-08-06',
-        'choices' => [['message' => ['content' => json_encode([
+        'output' => [['type' => 'message', 'content' => [['type' => 'output_text', 'text' => json_encode([
             'summary' => 'Weitgehend plausibel.',
             'fields' => [
                 'risk_security_overall_risk_level' => ['status' => 'change', 'value' => '3 – Mittel'],
@@ -1083,8 +1253,8 @@ it('prueft das Risikoprofil je Bereich Feld fuer Feld und uebernimmt Stufen, Sch
                 'risk_climate_climate_zone' => ['status' => 'ok'],
                 'risk_natural_hazards_flood_risk' => ['status' => 'change', 'value' => 'extrem'],
             ],
-        ], JSON_UNESCAPED_UNICODE)]]],
-        'usage' => ['prompt_tokens' => 300, 'completion_tokens' => 120, 'total_tokens' => 420],
+        ], JSON_UNESCAPED_UNICODE)]]]],
+        'usage' => ['input_tokens' => 300, 'output_tokens' => 120, 'total_tokens' => 420],
     ])]);
 
     $europe = continent('Europa', 'EU');
@@ -1103,7 +1273,7 @@ it('prueft das Risikoprofil je Bereich Feld fuer Feld und uebernimmt Stufen, Sch
         ->assertSet('aiReview.fields.risk_security_overall_risk_level', null);
 
     // Die KI bekommt jedes Feld des Bereichs einzeln, lesbar beschriftet – und nur diese.
-    Http::assertSent(fn ($request) => str_contains($content = $request->data()['messages'][0]['content'] ?? '', 'risk_climate_climate_zone („Klima › Klimazone“): tropisch')
+    Http::assertSent(fn ($request) => str_contains($content = $request->data()['input'] ?? '', 'risk_climate_climate_zone („Klima › Klimazone“): tropisch')
         && str_contains($content, 'Abschnitt: Klima')
         && ! str_contains($content, 'risk_health_malaria_risk'));
 

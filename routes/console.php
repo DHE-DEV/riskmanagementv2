@@ -135,6 +135,13 @@ Schedule::command('app-devices:prune-transfers')
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/app-devices-prune-transfers.log'));
 
+// Auftraege der KI-Feldpruefung aufraeumen (aelter als 30 Tage)
+Schedule::command('model:prune', ['--model' => [\App\Models\AiFieldReview::class]])
+    ->dailyAt('04:40')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/ai-field-reviews-prune.log'));
+
 // GTM Notification Queue
 Schedule::command('notifications:process-gtm')
     ->cron('*/'.config('notifications.gtm_interval', 5).' * * * *')

@@ -2,7 +2,9 @@
 
 namespace App\Livewire\AdminV2\Concerns;
 
+use App\Jobs\ReviewAiFieldsJob;
 use App\Models\AiCheck;
+use App\Models\AiFieldReview;
 use App\Services\AiCheckService;
 use App\Services\AiCheckTaskService;
 use App\Services\AiFieldReviewService;
@@ -48,9 +50,21 @@ trait RunsAiChecks
      * Ergebnis der automatischen Feldpruefung – bleibt nach dem Schliessen des
      * Fensters unter den Feldern stehen, bis es verworfen wird.
      *
-     * @var array{section: string, fields: array<string, array{status: string, value: ?string, note: ?string, applied?: bool, note_applied?: bool}>, summary: ?string, usage: ?array}|null
+     * @var array{section: string, fields: array<string, array{status: string, value: ?string, note: ?string, sources?: array<int, string>, applied?: bool, note_applied?: bool}>, summary: ?string, sources?: array<int, array{url: string, title: ?string}>, usage: ?array}|null
      */
     public ?array $aiReview = null;
+
+    /** Auftrag der Feldpruefung, dessen Ergebnis gerade im Formular steht */
+    public ?int $aiReviewId = null;
+
+    /** Auftrag, der beim Laden der Seite geoeffnet wird (?ki-pruefung=…) */
+    public ?int $aiReviewToOpen = null;
+
+    /** @var array<int, int> fertige Auftraege, die schon gemeldet, aber noch nicht geoeffnet sind */
+    public array $aiAnnouncedReviewIds = [];
+
+    /** Seite des Formulars – der Link "KI-Auftraege" fuehrt dorthin zurueck */
+    public string $aiPageUrl = '';
 
     /** @var array{title: string, html: string, prompt: string, usage: ?array, task?: array{met: bool, created: bool, parsed: bool, id: ?int, title: ?string, url: ?string}}|null */
     public ?array $aiResult = null;
@@ -165,8 +179,20 @@ trait RunsAiChecks
     }
 
     /**
-     * Die KI prueft jedes Feld des offenen Abschnitts. Die Hinweise erscheinen
-     * im Fenster und unter den Feldern; Vorschlaege lassen sich uebernehmen.
+     * Seite merken und einen per Link angeforderten Auftrag vormerken.
+     */
+    public function mountRunsAiChecks(): void
+    {
+        // Nur der Pfad: der Link bleibt auf dieser Plattform.
+        $this->aiPageUrl = '/'.ltrim(request()->path(), '/');
+        $this->aiReviewToOpen = request()->integer('ki-pruefung') ?: null;
+    }
+
+    /**
+     * Die KI recherchiert im Internet und prueft jedes Feld des offenen Abschnitts.
+     * Das dauert oft ueber eine Minute: der Auftrag geht in die Queue, und es
+     * lassen sich weitere einreichen. Ist er fertig, meldet er sich (Formular,
+     * "KI-Auftraege"); Vorschlaege lassen sich dann uebernehmen.
      */
     public function reviewAiFields(): void
     {
@@ -179,8 +205,13 @@ trait RunsAiChecks
             return;
         }
 
-        // Viele Felder brauchen laenger als die ueblichen 30 Sekunden.
-        set_time_limit(120);
+        $subject = $this->aiSubject();
+
+        if ($this->aiOpenReviews->contains('section', $this->aiSection)) {
+            $this->aiError = 'Für diesen Abschnitt läuft bereits eine Feldprüfung.';
+
+            return;
+        }
 
         $labels = $this->aiReviewLabels($this->aiSection);
 
@@ -192,24 +223,178 @@ trait RunsAiChecks
         $all = $this->aiContext();
         $context = array_intersect_key($all, $labels);
 
-        try {
-            $result = app(AiFieldReviewService::class)->review(
-                $this->aiArea(),
-                $this->aiSection,
-                $context,
-                $labels,
-                array_diff_key($all, $context),
-                AiAreas::placeholders($this->aiArea(), null),
-                trim($this->aiCustomModel) ?: null,
-                $this->aiReviewHint($this->aiSection),
-            );
-        } catch (Throwable $exception) {
-            $this->aiError = $exception->getMessage();
+        $review = AiFieldReview::create([
+            'user_id' => auth('web')->id(),
+            'area' => $this->aiArea(),
+            'section' => $this->aiSection,
+            'subject_type' => $subject?->getMorphClass(),
+            'subject_id' => $subject?->getKey(),
+            'title' => $this->aiReviewTitle(),
+            // Ein neuer, ungespeicherter Eintrag laesst sich spaeter nicht wieder oeffnen.
+            'url' => $subject && $this->aiPageUrl !== '' ? $this->aiPageUrl : null,
+            'model' => trim($this->aiCustomModel) ?: null,
+            'status' => AiFieldReview::STATUS_QUEUED,
+        ]);
+
+        ReviewAiFieldsJob::dispatch(
+            $review->id,
+            $context,
+            $labels,
+            array_diff_key($all, $context),
+            AiAreas::placeholders($this->aiArea(), null),
+            $this->aiReviewHint($this->aiSection),
+        );
+
+        unset($this->aiOpenReviews);
+        $this->dispatch('adminv2-ai-reviews-changed');
+
+        // Mit der Queue "sync" (Tests, lokal) ist der Auftrag schon fertig.
+        $this->checkAiReviews();
+
+        if ($this->aiReviewId !== $review->id) {
+            $this->dispatch('adminv2-toast', message: 'Feldprüfung „'.$review->sectionLabel().'“ eingereicht – du kannst weiterarbeiten, sie meldet sich, wenn sie fertig ist.');
+        }
+    }
+
+    /**
+     * Wartende und laufende Auftraege dieses Eintrags.
+     *
+     * @return Collection<int, AiFieldReview>
+     */
+    #[Computed]
+    public function aiOpenReviews(): Collection
+    {
+        return AiFieldReview::query()
+            ->where('user_id', auth('web')->id())
+            ->forSubject($this->aiArea(), $this->aiSubject())
+            ->open()
+            ->oldest()
+            ->get();
+    }
+
+    /**
+     * Fertige, noch nicht geoeffnete Auftraege dieses Eintrags.
+     *
+     * @return Collection<int, AiFieldReview>
+     */
+    #[Computed]
+    public function aiFinishedReviews(): Collection
+    {
+        return AiFieldReview::query()
+            ->where('user_id', auth('web')->id())
+            ->forSubject($this->aiArea(), $this->aiSubject())
+            ->unseenFinished()
+            ->latest('finished_at')
+            ->get();
+    }
+
+    /**
+     * Wird abgefragt, solange Auftraege dieses Eintrags offen sind: ein fertiges
+     * Ergebnis kommt ins Formular, sofern dort gerade keines steht; sonst
+     * bleibt es zum Oeffnen in der Liste.
+     */
+    public function checkAiReviews(): void
+    {
+        unset($this->aiOpenReviews, $this->aiFinishedReviews);
+
+        foreach ($this->aiFinishedReviews as $review) {
+            if ($review->failureMessage() !== null) {
+                $review->update(['seen_at' => now()]);
+                $this->dispatch('adminv2-toast', message: 'Feldprüfung „'.$review->sectionLabel().'“ fehlgeschlagen: '.$review->failureMessage(), variant: 'danger');
+
+                if ($review->section === $this->aiSection) {
+                    $this->aiError = $review->failureMessage();
+                }
+
+                continue;
+            }
+
+            // Ins Formular, wenn dort nichts steht oder das Fenster genau diesen Abschnitt zeigt.
+            if ($this->aiReview === null || $review->section === $this->aiSection) {
+                $this->loadAiReview($review);
+                $this->dispatch('adminv2-toast', message: 'Feldprüfung „'.$review->sectionLabel().'“ fertig – die Vorschläge stehen bereit.');
+            } elseif (! in_array($review->id, $this->aiAnnouncedReviewIds, true)) {
+                $this->aiAnnouncedReviewIds[] = $review->id;
+                $this->dispatch('adminv2-toast', message: 'Feldprüfung „'.$review->sectionLabel().'“ fertig – im KI-Fenster unter „Fertige Prüfungen“ öffnen.');
+            }
+        }
+
+        unset($this->aiOpenReviews, $this->aiFinishedReviews);
+        $this->dispatch('adminv2-ai-reviews-changed');
+    }
+
+    /**
+     * Ein fertiges Ergebnis oeffnen (Liste im Fenster, Link aus "KI-Auftraege").
+     */
+    public function openAiReview(int $id): void
+    {
+        $review = AiFieldReview::query()->where('user_id', auth('web')->id())->forSubject($this->aiArea(), $this->aiSubject())->find($id);
+
+        if (! $review || ! $review->isFinished()) {
+            return;
+        }
+
+        if ($review->failureMessage() !== null) {
+            $review->update(['seen_at' => $review->seen_at ?? now()]);
+            $this->openAiCheck($review->section);
+            $this->aiCheckId = 'review';
+            $this->aiError = $review->failureMessage();
 
             return;
         }
 
-        $this->aiReview = ['section' => $this->aiSection] + $result;
+        $this->loadAiReview($review);
+        $this->openAiCheck($review->section);
+        $this->aiCheckId = 'review';
+        $this->dispatch('adminv2-ai-reviews-changed');
+    }
+
+    /**
+     * Den per Link angeforderten Auftrag oeffnen (beim Laden der Seite).
+     */
+    public function openRequestedAiReview(): void
+    {
+        $id = $this->aiReviewToOpen;
+        $this->aiReviewToOpen = null;
+
+        if ($id) {
+            $this->openAiReview($id);
+        }
+
+        $this->checkAiReviews();
+    }
+
+    /**
+     * Einen wartenden Auftrag zuruecknehmen bzw. einen laufenden verwerfen.
+     */
+    public function cancelAiReview(int $id): void
+    {
+        AiFieldReview::query()->where('user_id', auth('web')->id())->whereKey($id)->open()->delete();
+
+        unset($this->aiOpenReviews);
+        $this->dispatch('adminv2-ai-reviews-changed');
+    }
+
+    protected function loadAiReview(AiFieldReview $review): void
+    {
+        $this->aiReview = ['section' => $review->section] + (array) $review->result;
+        $this->aiReviewId = $review->id;
+        $review->update(['seen_at' => $review->seen_at ?? now()]);
+        unset($this->aiFinishedReviews);
+    }
+
+    /**
+     * Bezeichnung des Eintrags fuer die Liste der Auftraege, z. B. "Deutschland".
+     */
+    protected function aiReviewTitle(): ?string
+    {
+        $subject = $this->aiSubject();
+
+        return match (true) {
+            $subject === null => null,
+            method_exists($subject, 'getName') => (string) $subject->getName('de'),
+            default => (string) ($subject->getAttribute('name') ?? $subject->getKey()),
+        };
     }
 
     /**
@@ -292,6 +477,10 @@ trait RunsAiChecks
     public function dismissAiReview(): void
     {
         $this->aiReview = null;
+        $this->aiReviewId = null;
+
+        // Ein weiteres fertiges Ergebnis rueckt nach.
+        $this->checkAiReviews();
     }
 
     /**

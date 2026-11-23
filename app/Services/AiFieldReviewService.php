@@ -3,12 +3,13 @@
 namespace App\Services;
 
 use App\Support\AdminV2\AiAreas;
+use App\Support\AiProviders;
 use App\Support\AiSettings;
 
 /**
- * Laesst die KI die Felder eines Formular-Abschnitts pruefen. Die Antwort ist
- * je Feld: korrekt, Aenderungsvorschlag (mit Wert und Begruendung) oder nicht
- * pruefbar – in fester JSON-Form, damit sie unter den Feldern stehen und
+ * Laesst die KI die Felder eines Formular-Abschnitts pruefen – mit Websuche,
+ * Texte fuer Reisende in eigenen Worten. Die Antwort ist je Feld: korrekt,
+ * Aenderungsvorschlag (mit Wert, Begruendung und Quellen) oder nicht pruefbar – in fester JSON-Form, damit sie unter den Feldern stehen und
  * uebernommen werden kann.
  */
 class AiFieldReviewService
@@ -19,45 +20,38 @@ class AiFieldReviewService
 
     public const STATUS_UNKNOWN = 'unknown';
 
+    /** Wartezeit auf die Websuche in Sekunden. */
+    public const TIMEOUT = 300;
+
     /**
+     * Die KI recherchiert im Internet und bewertet jedes Feld des Abschnitts.
+     * Dauert oft ueber eine Minute – laeuft daher im Hintergrund (ReviewAiFieldsJob).
+     *
      * @param  array<string, mixed>  $context  Angaben des Abschnitts: Schluessel => Wert
      * @param  array<string, string>  $labels  Schluessel => Bezeichnung
      * @param  array<string, mixed>  $extra  weitere Angaben des Eintrags zur Einordnung (z. B. Name, ISO-Code)
      * @param  array<string, string>  $extraLabels
      * @param  string|null  $hint  Hinweis des Formulars zu diesem Abschnitt, z. B. wie die Felder zusammenhaengen
-     * @return array{fields: array<string, array{status: string, value: ?string, note: ?string}>, summary: ?string, prompt: string, usage: ?array}
+     * @return array{fields: array<string, array{status: string, value: ?string, note: ?string, sources: array<int, string>}>, summary: ?string, sources: array<int, array{url: string, title: ?string}>, prompt: string, usage: ?array}
      */
     public function review(string $area, string $section, array $context, array $labels, array $extra, array $extraLabels, ?string $model = null, ?string $hint = null): array
     {
-        // Unter dem Zeitlimit des Webservers bleiben, damit ein Fehler im Fenster ankommt.
-        $options = ['model' => $model ?: AiSettings::model(), 'timeout' => 50];
-        $ai = app(ChatGptService::class);
+        $model = $model ?: AiSettings::model();
+        $ai = AiProviders::webSearchFor($model);
 
-        // Bezeichnungen wie "Sicherheit › Kriminalitätsniveau": je Bereich eine
-        // eigene Anfrage, alle gleichzeitig – ein grosser Abschnitt dauert sonst zu lange.
-        $groups = [];
-        foreach ($labels as $key => $label) {
-            $groups[str_contains($label, ' › ') ? explode(' › ', $label, 2)[0] : ''][$key] = $label;
-        }
-
-        // Haengen die Felder voneinander ab (Hinweis des Formulars), bleiben sie in einer Anfrage beisammen.
-        if (count($groups) > 1 && $hint === null) {
-            $prompts = array_map(fn (array $group) => $this->buildPrompt($area, $section, $context, $group, $extra, $extraLabels), $groups);
-            $answers = $ai->sendPrompts($prompts, $options);
-
-            $result = ['fields' => [], 'summary' => null];
-            foreach ($groups as $name => $group) {
-                $result['fields'] += $this->parse($answers[$name], array_keys($group))['fields'];
-            }
-            $prompt = implode("\n\n", $prompts);
-        } else {
-            $prompt = $this->buildPrompt($area, $section, $context, $labels, $extra, $extraLabels, $hint);
-            $result = $this->parse($ai->sendPrompt($prompt, $options), array_keys($labels));
-        }
+        $prompt = $this->buildPrompt($area, $section, $context, $labels, $extra, $extraLabels, $hint);
+        $result = $this->parse($ai->searchWeb($prompt, ['model' => $model, 'timeout' => self::TIMEOUT]), array_keys($labels));
 
         $usage = $ai->lastUsage();
 
         return $result + [
+            // Belegte Seiten zuerst, je Adresse einmal.
+            'sources' => collect($ai->lastSources())
+                ->sortByDesc('cited')
+                ->map(fn (array $source) => ['url' => $this->sourceUrl((string) $source['url']), 'title' => $source['title'] ?? null])
+                ->unique('url')
+                ->values()
+                ->all(),
             'prompt' => $prompt,
             'usage' => $usage ? $usage + ['cost' => AiSettings::cost($usage['model'], $usage['input_tokens'], $usage['output_tokens'])] : null,
         ];
@@ -89,14 +83,27 @@ class AiFieldReviewService
             }
         }
 
-        return implode("\n", array_filter([
-            'Du prüfst Stammdaten einer Reise-Informationsplattform. Bereich: '.$areaLabel.', Abschnitt: '.$sectionLabel.'.',
+        return implode("\n\n", array_filter([
+            'Du pflegst Stammdaten einer Reise-Informationsplattform für Reisende und Reisebüros. Bereich: '.$areaLabel.', Abschnitt: '.$sectionLabel.'.',
             $identity ? "Der Eintrag:\n".implode("\n", $identity) : null,
-            "Prüfe jedes der folgenden Felder (Schlüssel, Bezeichnung, aktueller Wert; „–“ heißt leer):\n".implode("\n", $fields),
+            "Prüfe jedes der folgenden Felder (Schlüssel, Bezeichnung, aktueller Wert; „–“ heißt leer) und fülle leere Felder:\n".implode("\n", $fields),
             $hint,
+            implode("\n", [
+                'Recherche:',
+                '- Suche im Internet nach dem aktuellen Stand, bevor du ein Feld bewertest – verlasse dich nicht auf dein Vorwissen.',
+                '- Bevorzuge amtliche und fachliche Quellen (z. B. Auswärtiges Amt, Botschaften, Gesundheits- und Tourismusbehörden, WHO, Flughafen- bzw. Airline-Websites); gleiche bei wichtigen Angaben mehrere Quellen ab.',
+                '- Findest du keine verlässliche Angabe, ist das Feld "unknown" – nichts erfinden oder schätzen.',
+            ]),
+            implode("\n", [
+                'Texte (Beschreibungen, Hinweise, Bemerkungen):',
+                '- Formuliere vollständig in eigenen Worten. Übernimm keine Sätze oder Satzteile wörtlich aus den Quellen.',
+                '- Schreibe für Reisende: Was bedeutet die Information konkret für die Reise, worauf sollte man achten, was ist zu tun? Praktisch, sachlich und verständlich, ohne Werbesprache und ohne Füllsätze.',
+                '- Keine Quellenangaben, Links oder Fußnoten im Wert selbst – Quellen gehören in "sources".',
+                '- Felder in anderen Sprachen (EN, NL) bekommen dieselbe Aussage, natürlich in dieser Sprache formuliert.',
+            ]),
             'Antworte ausschließlich mit JSON in genau dieser Form, ohne Erklärungen davor oder danach:',
-            '{"summary": "ein Satz zum Gesamteindruck", "fields": {"<schlüssel>": {"status": "ok" | "change" | "unknown", "value": "<empfohlener Wert>", "note": "<kurze Begründung>"}}}',
-            'Regeln: "ok", wenn der aktuelle Wert richtig ist. "change", wenn er falsch, veraltet oder leer ist und du einen Wert empfehlen kannst – dann steht in "value" der vollständige empfohlene Wert. "unknown", wenn du es nicht verlässlich beurteilen kannst.',
+            '{"summary": "ein Satz zum Gesamteindruck", "fields": {"<schlüssel>": {"status": "ok" | "change" | "unknown", "value": "<empfohlener Wert>", "note": "<kurze Begründung>", "sources": ["<URL der Quelle>"]}}}',
+            'Regeln: "ok", wenn der aktuelle Wert richtig ist. "change", wenn er falsch, veraltet oder leer ist und du einen Wert empfehlen kannst – dann steht in "value" der vollständige empfohlene Wert. "unknown", wenn du es nicht verlässlich beurteilen kannst. In "sources" stehen die Adressen der Seiten, auf die sich die Bewertung stützt.',
             'Hat ein Feld mehrere Angaben (Listen, „alle Angaben“), steht in "value" je Angabe eine eigene Zeile in der Form „Bezeichnung: Wert“ – als Text mit Zeilenumbrüchen, nicht als JSON und nicht als Fließtext.',
             'Werte so schreiben, wie sie im Feld stehen sollen: Ja/Nein für Ja/Nein-Felder, Zahlen ohne Tausendertrennzeichen, Koordinaten dezimal mit Punkt, Codes in Großbuchstaben, Kontinente/Länder/Regionen/Städte/Typen mit ihrem deutschen Namen. Gib zu jedem Schlüssel genau einen Eintrag zurück.',
         ]));
@@ -133,7 +140,7 @@ class AiFieldReviewService
 
     /**
      * @param  array<int, string>  $keys
-     * @return array{fields: array<string, array{status: string, value: ?string, note: ?string}>, summary: ?string}
+     * @return array{fields: array<string, array{status: string, value: ?string, note: ?string, sources: array<int, string>}>, summary: ?string}
      */
     public function parse(string $answer, array $keys): array
     {
@@ -150,7 +157,7 @@ class AiFieldReviewService
             $field = $data['fields'][$key] ?? null;
 
             if (! is_array($field)) {
-                $fields[$key] = ['status' => self::STATUS_UNKNOWN, 'value' => null, 'note' => 'Keine Angabe der KI.'];
+                $fields[$key] = ['status' => self::STATUS_UNKNOWN, 'value' => null, 'note' => 'Keine Angabe der KI.', 'sources' => []];
 
                 continue;
             }
@@ -167,10 +174,16 @@ class AiFieldReviewService
                 $status = self::STATUS_UNKNOWN;
             }
 
+            $note = isset($field['note']) ? $this->withoutCitations((string) $field['note']) : '';
+
             $fields[$key] = [
                 'status' => $status,
-                'value' => $status === self::STATUS_CHANGE ? $value : null,
-                'note' => isset($field['note']) && trim((string) $field['note']) !== '' ? trim((string) $field['note']) : null,
+                'value' => $status === self::STATUS_CHANGE ? $this->withoutCitations($value) : null,
+                'note' => $note !== '' ? $note : null,
+                'sources' => array_values(array_unique(array_filter(
+                    array_map(fn ($url) => is_string($url) ? $this->sourceUrl($url) : '', (array) ($field['sources'] ?? [])),
+                    fn (string $url) => preg_match('#^https?://#i', $url) === 1,
+                ))),
             ];
         }
 
@@ -178,5 +191,31 @@ class AiFieldReviewService
             'fields' => $fields,
             'summary' => isset($data['summary']) && trim((string) $data['summary']) !== '' ? trim((string) $data['summary']) : null,
         ];
+    }
+
+    /**
+     * Quellenverweise, die die Websuche in den Text setzt ("([seite.de](https://…))"), entfernen.
+     */
+    protected function withoutCitations(?string $text): ?string
+    {
+        if ($text === null) {
+            return null;
+        }
+
+        $text = preg_replace('/\s*\(\[[^\]]*\]\(https?:[^)\s]+\)\)/u', '', $text) ?? $text;
+        $text = preg_replace('/\[([^\]]+)\]\(https?:[^)\s]+\)/u', '$1', $text) ?? $text;
+        $text = preg_replace('/[ \t]+([.,;:])/u', '$1', $text) ?? $text;
+
+        return trim($text);
+    }
+
+    /**
+     * Adresse ohne die Kennung, die die Websuche anhaengt (utm_source=openai).
+     */
+    protected function sourceUrl(string $url): string
+    {
+        $url = preg_replace('/([?&])utm_source=openai(&|$)/', '$1', trim($url)) ?? $url;
+
+        return rtrim($url, '?&');
     }
 }
