@@ -1411,26 +1411,97 @@ class Editor extends Component
     }
 
     /**
-     * KI-Recherche je Feld: alle Felder des Risikoprofils.
+     * Platzhalter, die keine eigenen Felder sind (Zaehler, Auswahllisten).
+     */
+    private const AI_RESEARCH_SKIPPED = ['holidays_year', 'holidays_count', 'images_count', 'taxi_apps_available', 'mobile_operators_available'];
+
+    /**
+     * Felder, deren Recherche nur informiert: Listen und Bilder lassen sich nicht automatisch setzen.
+     */
+    private const AI_RESEARCH_NOT_APPLYABLE = ['names', 'taxi_apps', 'mobile_operators', 'holidays', 'flag', 'images'];
+
+    /**
+     * KI-Recherche je Feld: alle Felder der Laenderseite – Grunddaten, Texte,
+     * weitere Informationen, Trinkgeld, Strom, Listen und das Risikoprofil.
      *
-     * @return array<string, array{label: string, section: string, format: ?string, note: bool}>
+     * @return array<string, array{label: string, section: string, format: ?string, note: bool, applyable: bool}>
      */
     protected function aiResearchFields(): array
     {
-        $fields = [];
+        return once(function () {
+            $fields = [];
 
-        foreach (CountryRiskProfile::categories() as $category => $definition) {
-            foreach ($definition['fields'] as $field => $meta) {
-                $fields[CountryRiskProfile::placeholderKey($category, $field)] = [
-                    'label' => $definition['label'].' › '.$meta['label'],
-                    'section' => CountryRiskProfile::section($category),
-                    'format' => CountryRiskProfile::formatHint($meta),
-                    'note' => CountryRiskProfile::hasNote($meta),
-                ];
+            foreach (AiAreas::sectionLabels('countries') as $section => $sectionLabel) {
+                if (str_starts_with($section, 'risk_')) {
+                    continue;
+                }
+
+                foreach (AiAreas::placeholders('countries', $section) as $key => $label) {
+                    if (in_array($key, self::AI_RESEARCH_SKIPPED, true)) {
+                        continue;
+                    }
+
+                    $fields[$key] = [
+                        'label' => $sectionLabel.' › '.$label,
+                        'section' => $section,
+                        'format' => $this->aiResearchFormat($key),
+                        'note' => false,
+                        'applyable' => ! in_array($key, self::AI_RESEARCH_NOT_APPLYABLE, true),
+                    ];
+                }
             }
+
+            foreach (CountryRiskProfile::categories() as $category => $definition) {
+                foreach ($definition['fields'] as $field => $meta) {
+                    $fields[CountryRiskProfile::placeholderKey($category, $field)] = [
+                        'label' => $definition['label'].' › '.$meta['label'],
+                        'section' => CountryRiskProfile::section($category),
+                        'format' => CountryRiskProfile::formatHint($meta),
+                        'note' => CountryRiskProfile::hasNote($meta),
+                        'applyable' => true,
+                    ];
+                }
+            }
+
+            return $fields;
+        });
+    }
+
+    /**
+     * Erlaubte Werte eines Feldes ausserhalb des Risikoprofils; null = Fliesstext auf Deutsch.
+     */
+    protected function aiResearchFormat(string $key): ?string
+    {
+        $languages = ['de' => 'Deutsch', 'en' => 'Englisch', 'nl' => 'Niederländisch'];
+
+        if (preg_match('/^(.+)_(de|en|nl)$/', $key, $match)) {
+            return match (true) {
+                $match[1] === 'known_for' => '3–6 Stichworte auf '.$languages[$match[2]].', mit Komma getrennt',
+                $match[1] === 'national_day_name' => 'Name des Nationalfeiertags auf '.$languages[$match[2]],
+                default => 'Fließtext auf '.$languages[$match[2]].' für Reisende – in eigenen Worten, sachlich, ohne Quellenverweise im Text',
+            };
         }
 
-        return $fields;
+        return match ($key) {
+            'name' => 'Name des Landes auf Deutsch',
+            'name_en' => 'Name des Landes auf Englisch',
+            'names' => 'Liste „Sprachcode: Name“, durch Komma getrennt',
+            'iso_code' => 'ISO-3166-1-Alpha-2-Code, zwei Großbuchstaben',
+            'iso3_code' => 'ISO-3166-1-Alpha-3-Code, drei Großbuchstaben',
+            'continent' => 'Name des Kontinents auf Deutsch, z. B. Europa',
+            'is_eu_member', 'is_schengen_member' => 'Ja oder Nein',
+            'currency_code' => 'ISO-4217-Code, drei Großbuchstaben',
+            'currency_name' => 'Name der Währung auf Deutsch',
+            'currency_symbol' => 'Währungssymbol, höchstens 5 Zeichen',
+            'phone_prefix' => 'internationale Vorwahl mit +, z. B. +34',
+            'timezone' => 'IANA-Zeitzone, z. B. Europe/Madrid',
+            'population', 'area_km2' => 'eine Zahl ohne Einheit und Tausendertrennzeichen',
+            'lat', 'lng' => 'Dezimalgrad mit Punkt, z. B. 40.4637',
+            'national_day_date' => 'Datum als TT.MM.',
+            'taxi_apps', 'mobile_operators' => 'Liste der Namen, durch Komma getrennt',
+            'holidays' => 'Liste „Datum – Name“, je Feiertag eine Zeile',
+            default => 'kurze Angabe in einer Zeile, kein Fließtext',
+        };
     }
 
     protected function aiResearchDisplay(string $key, string $value): ?string
@@ -1438,7 +1509,7 @@ class Editor extends Component
         $resolved = CountryRiskProfile::resolvePlaceholder($key);
 
         if (! $resolved) {
-            return null;
+            return ($this->aiResearchFields()[$key]['applyable'] ?? false) && trim($value) !== '' ? trim($value) : null;
         }
 
         $parsed = CountryRiskProfile::parseSuggestion($resolved[2], $value);

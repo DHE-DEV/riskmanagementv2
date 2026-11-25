@@ -44,9 +44,10 @@ trait ResearchesAiFields
 
     /**
      * Die Felder mit KI-Recherche: Schluessel => Bezeichnung, Abschnitt, erlaubte
-     * Werte (null = Fliesstext) und ob die Begruendung in eine Notiz kann.
+     * Werte (null = Fliesstext auf Deutsch), ob die Begruendung in eine Notiz
+     * kann und ob sich der Wert ins Formular uebernehmen laesst.
      *
-     * @return array<string, array{label: string, section: string, format: ?string, note: bool}>
+     * @return array<string, array{label: string, section: string, format: ?string, note: bool, applyable: bool}>
      */
     abstract protected function aiResearchFields(): array;
 
@@ -79,7 +80,7 @@ trait ResearchesAiFields
         }
 
         $template = $this->aiResearchTemplates->get($key)?->firstWhere('is_default', true);
-        $provider = (string) array_key_first(AiModelOptions::providers());
+        $provider = (string) array_key_first($this->aiResearchProviders);
 
         $this->aiResearch[$key] = ['template' => '', 'prompt' => $this->aiResearchStarterPrompt($key), 'provider' => $provider, 'model' => AiModelOptions::defaultModel($provider), 'name' => '', 'default' => false];
 
@@ -222,7 +223,11 @@ trait ResearchesAiFields
 
         $before = $this->aiResearchCurrentValue($run->field);
 
-        if ($run->value !== null && ($this->aiResearchDisplay($run->field, $run->value) === null || ! $this->aiApply($run->field, $run->value))) {
+        if (! $field['applyable'] && ! ($field['note'] && $run->note !== null)) {
+            return;
+        }
+
+        if ($field['applyable'] && $run->value !== null && ($this->aiResearchDisplay($run->field, $run->value) === null || ! $this->aiApply($run->field, $run->value))) {
             $this->dispatch('adminv2-toast', message: 'Dieser Vorschlag passt nicht ins Feld – bitte von Hand eintragen.', variant: 'danger');
 
             return;
@@ -291,6 +296,17 @@ trait ResearchesAiFields
             ->update(['saved_at' => now()]);
 
         unset($this->aiResearchRuns, $this->aiResearchHistory);
+    }
+
+    /**
+     * KI-Anbieter mit hinterlegtem Schluessel.
+     *
+     * @return array<string, string>
+     */
+    #[Computed]
+    public function aiResearchProviders(): array
+    {
+        return AiModelOptions::providers();
     }
 
     /**
@@ -374,15 +390,16 @@ trait ResearchesAiFields
         $field = $this->aiResearchFields()[$key];
         $entry = AiAreas::label($this->aiArea()).' › „'.$this->aiReviewTitle().'“';
         $format = $field['format'] ?? 'Fließtext auf Deutsch für Reisende – in eigenen Worten, sachlich, ohne Quellenverweise im Text';
-        $json = $field['note']
-            ? '{"value": "<Wert im erlaubten Format oder null>", "note": "<Begründung für Reisende auf Deutsch, 1–3 Sätze>"}'
-            : '{"value": "<Text oder null>"}';
+        $note = $field['note'] ? 'Begründung für Reisende auf Deutsch, 1–3 Sätze' : 'kurze Begründung auf Deutsch, woher der Wert stammt';
+        $hint = $this->aiReviewHint($field['section']);
 
         return trim($this->aiResolvePlaceholders($template))."\n\n---\n"
             .'Gesucht ist der Wert für das Feld „'.$field['label'].'“ im Eintrag '.$entry.".\n"
             .'Erlaubter Wert: '.$format.".\n"
+            .($hint ? 'Hinweise zum Abschnitt: '.$hint."\n" : '')
             ."Recherchiere im Internet und bevorzuge amtliche Quellen (z. B. Auswärtiges Amt). Ist der Wert nicht verlässlich feststellbar, setze \"value\" auf null.\n"
-            ."Antworte ausschließlich mit einem JSON-Objekt ohne weiteren Text:\n".$json;
+            ."Antworte ausschließlich mit einem JSON-Objekt ohne weiteren Text:\n"
+            .'{"value": "<Wert im erlaubten Format oder null>", "note": "<'.$note.'>"}';
     }
 
     /**
@@ -408,12 +425,12 @@ trait ResearchesAiFields
 
     protected function aiResearchStarterPrompt(string $key): string
     {
-        return 'Wie ist „'.$this->aiResearchFields()[$key]['label'].'“ für {name} einzuschätzen? Berücksichtige die aktuellen Reise- und Sicherheitshinweise des Auswärtigen Amts und weitere seriöse Quellen.';
+        return 'Recherchiere für {name}: „'.$this->aiResearchFields()[$key]['label'].'“. Nutze aktuelle, verlässliche Quellen (z. B. Auswärtiges Amt, amtliche Stellen).';
     }
 
     protected function loadAiResearchTemplate(string $key, AiFieldPrompt $template): void
     {
-        $providers = AiModelOptions::providers();
+        $providers = $this->aiResearchProviders;
         $provider = isset($providers[$template->provider]) ? $template->provider : (string) array_key_first($providers);
 
         $this->aiResearch[$key] = array_merge($this->aiResearch[$key], [
@@ -432,7 +449,7 @@ trait ResearchesAiFields
 
         $this->validate([
             $base.'prompt' => ['required', 'string', 'min:10', 'max:6000'],
-            $base.'provider' => ['required', Rule::in(array_keys(AiModelOptions::providers()))],
+            $base.'provider' => ['required', Rule::in(array_keys($this->aiResearchProviders))],
             $base.'model' => ['required', 'string', Rule::in(array_keys(AiModelOptions::models($provider)))],
             $base.'name' => [Rule::requiredIf($withName), 'nullable', 'string', 'max:100'],
         ], [

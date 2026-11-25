@@ -3,13 +3,18 @@
 
     - $researchKey: Schluessel des Feldes, z. B. risk_security_crime_level
     - $basicPlaceholders: Platzhalter, die als Schaltflaechen bereitstehen (Schluessel => Bezeichnung)
+    - $researchLabel (optional): Zusatz an der Schaltflaeche, wenn mehrere Felder nebeneinanderstehen
+
+    Nur an gespeicherten Eintraegen ($record): das Protokoll haengt am Datensatz.
 --}}
+@if ($record ?? null)
 @php
     $researchState = $aiResearch[$researchKey] ?? null;
     $researchRuns = $this->aiResearchRuns->get($researchKey, collect());
     $researchTemplates = $this->aiResearchTemplates->get($researchKey, collect());
     $latestRuns = $researchRuns->take(3);
-    $providers = \App\Support\AdminV2\AiModelOptions::providers();
+    $providers = $this->aiResearchProviders;
+    $researchField = $this->aiResearchFields()[$researchKey];
 @endphp
 
 <div
@@ -29,7 +34,7 @@
 >
     <div class="flex flex-wrap items-center gap-1">
         <flux:button size="xs" variant="ghost" icon="sparkles" x-on:click="open = ! open; if (open) $wire.openAiResearch(@js($researchKey))">
-            <span x-text="open ? 'KI-Recherche schließen' : 'KI-Recherche'"></span>
+            <span x-text="open ? 'KI-Recherche schließen' : @js('KI-Recherche'.(isset($researchLabel) ? ': '.$researchLabel : ''))"></span>
         </flux:button>
         @if ($researchRuns->isNotEmpty())
             <flux:button size="xs" variant="ghost" icon="clock" wire:click="showAiResearchHistory(@js($researchKey))">Verlauf ({{ $researchRuns->count() }})</flux:button>
@@ -138,8 +143,12 @@
             @else
                 <div class="flex flex-wrap items-start justify-between gap-2">
                     <div class="min-w-0 flex-1">
-                        @if ($run->value !== null)
-                            <p class="font-medium text-zinc-900 dark:text-white">Vorschlag: {{ $display ?? $run->value }}</p>
+                        @if ($run->value !== null && ! $researchField['applyable'])
+                            <p class="font-medium text-zinc-900 dark:text-white">Ergebnis:</p>
+                            <p class="whitespace-pre-line text-zinc-800 dark:text-zinc-200">{{ $run->value }}</p>
+                            <p class="text-xs text-zinc-500">Zur Information – bitte von Hand pflegen.</p>
+                        @elseif ($run->value !== null)
+                            <p class="whitespace-pre-line font-medium text-zinc-900 dark:text-white">Vorschlag: {{ $display ?? $run->value }}</p>
                             @if ($display === null)
                                 <p class="text-xs text-amber-700 dark:text-amber-400">Passt nicht ins Feld – bitte von Hand eintragen.</p>
                             @endif
@@ -154,7 +163,7 @@
                     </div>
                     @if ($run->isApplied())
                         <flux:badge size="sm" color="{{ $run->saved_at ? 'green' : 'amber' }}" icon="check">{{ $run->saved_at ? 'übernommen & gespeichert' : 'übernommen, nicht gespeichert' }}</flux:badge>
-                    @elseif (($run->value !== null && $display !== null) || ($run->value === null && $run->note !== null && ($this->aiResearchFields()[$researchKey]['note'] ?? false)))
+                    @elseif (($researchField['applyable'] && $run->value !== null && $display !== null) || ($researchField['note'] && $run->value === null && $run->note !== null))
                         <flux:button size="xs" variant="primary" icon="arrow-down-tray" wire:click="applyAiResearch({{ $run->id }})">Übernehmen</flux:button>
                     @endif
                 </div>
@@ -179,3 +188,4 @@
         </div>
     @endforeach
 </div>
+@endif

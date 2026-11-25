@@ -242,3 +242,60 @@ it('behaelt das Protokoll, wenn der Benutzer geloescht wird', function () {
 
     expect($run->fresh())->not->toBeNull()->user_id->toBeNull();
 });
+
+it('recherchiert auch Felder ausserhalb des Risikoprofils und uebernimmt sie ins Formular', function () {
+    fakeOpenAi('{"value": "eur", "note": "Amtliche Währung laut Zentralbank."}');
+
+    $component = countryEditor($this->spain)
+        ->call('openAiResearch', 'currency_code')
+        ->call('sendAiResearch', 'currency_code')
+        ->assertSee('Vorschlag: eur');
+
+    $run = AiQuestion::sole();
+    expect($run->section)->toBe('details')
+        ->and($run->prompt)->toContain('„Weitere Informationen › Währungscode“')
+        ->and($run->prompt)->toContain('ISO-4217-Code');
+
+    $component->call('applyAiResearch', $run->id)
+        ->assertSet('currencyCode', 'EUR');
+
+    expect($run->fresh()->applied_value)->toBe('EUR');
+});
+
+it('verlangt Texte in der Sprache des Feldes und gibt die Hinweise des Abschnitts mit', function () {
+    fakeOpenAi('{}');
+    Queue::fake();
+
+    countryEditor($this->spain)
+        ->call('openAiResearch', 'description_en')
+        ->call('sendAiResearch', 'description_en');
+
+    expect(AiQuestion::sole()->prompt)
+        ->toContain('Fließtext auf Englisch')
+        ->toContain('Hinweise zum Abschnitt:');
+});
+
+it('zeigt Ergebnisse zu Listenfeldern nur zur Information', function () {
+    fakeOpenAi('{"value": "Cabify, FreeNow", "note": "Beide in Madrid verbreitet."}');
+
+    $component = countryEditor($this->spain)
+        ->call('openAiResearch', 'taxi_apps')
+        ->call('sendAiResearch', 'taxi_apps')
+        ->assertSee('Cabify, FreeNow')
+        ->assertSee('Zur Information – bitte von Hand pflegen.')
+        ->assertDontSee('Übernehmen');
+
+    $component->call('applyAiResearch', AiQuestion::sole()->id);
+
+    expect(AiQuestion::sole()->applied_at)->toBeNull();
+});
+
+it('bietet die KI-Recherche erst an gespeicherten Laendern an', function () {
+    fakeOpenAi('{}');
+
+    Livewire::test(CountryEditor::class)
+        ->assertOk()
+        ->assertDontSee('KI-Recherche');
+
+    countryEditor($this->spain)->assertSee('KI-Recherche: Breitengrad');
+});

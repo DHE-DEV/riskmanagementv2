@@ -35,6 +35,10 @@
             </flux:modal.trigger>
         @endif
         <x-adminv2.cards-toggle />
+        @php
+            // Platzhalter, die die KI-Recherche je Feld als Schaltflaechen anbietet.
+            $researchPlaceholders = \App\Support\AdminV2\AiAreas::placeholders('countries', 'basics');
+        @endphp
     </x-adminv2.master-data.editor-header>
 
     <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -47,10 +51,12 @@
                         <div>
                             <flux:input wire:model="nameDe" label="Name (Deutsch)" maxlength="255" />
                             <x-adminv2.ai-field-hint key="name" :review="$aiReview" />
+                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'name', 'basicPlaceholders' => $researchPlaceholders])
                         </div>
                         <div>
                             <flux:input wire:model="nameEn" label="Name (Englisch)" maxlength="255" />
                             <x-adminv2.ai-field-hint key="name_en" :review="$aiReview" />
+                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'name_en', 'basicPlaceholders' => $researchPlaceholders])
                         </div>
                     </div>
 
@@ -68,6 +74,7 @@
                         </div>
 
                         <x-adminv2.ai-field-hint key="names" :review="$aiReview" :applyable="false" class="!mt-3 rounded-xl border border-dashed border-zinc-300 p-3 dark:border-zinc-700" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'names', 'basicPlaceholders' => $researchPlaceholders])
 
                         @if ($extraNames !== [])
                             <div class="mt-3 flex flex-col gap-2">
@@ -93,12 +100,14 @@
                             <flux:label>ISO-Code (2 Buchstaben)</flux:label>
                             <flux:input wire:model="isoCode" maxlength="2" class="font-mono uppercase" placeholder="DE" />
                             <x-adminv2.ai-field-hint key="iso_code" :review="$aiReview" />
+                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'iso_code', 'basicPlaceholders' => $researchPlaceholders])
                             <flux:error name="isoCode" />
                         </flux:field>
                         <flux:field>
                             <flux:label>ISO-Code (3 Buchstaben)</flux:label>
                             <flux:input wire:model="iso3Code" maxlength="3" class="font-mono uppercase" placeholder="DEU" />
                             <x-adminv2.ai-field-hint key="iso3_code" :review="$aiReview" />
+                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'iso3_code', 'basicPlaceholders' => $researchPlaceholders])
                             <flux:error name="iso3Code" />
                         </flux:field>
                         <flux:field>
@@ -110,6 +119,7 @@
                                 @endforeach
                             </flux:select>
                             <x-adminv2.ai-field-hint key="continent" :review="$aiReview" />
+                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'continent', 'basicPlaceholders' => $researchPlaceholders])
                             <flux:error name="continentId" />
                         </flux:field>
                     </div>
@@ -118,10 +128,12 @@
                         <div>
                             <flux:switch wire:model="isEuMember" label="EU-Mitglied" align="left" />
                             <x-adminv2.ai-field-hint key="is_eu_member" :review="$aiReview" />
+                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'is_eu_member', 'basicPlaceholders' => $researchPlaceholders])
                         </div>
                         <div>
                             <flux:switch wire:model="isSchengenMember" label="Schengen-Mitglied" align="left" />
                             <x-adminv2.ai-field-hint key="is_schengen_member" :review="$aiReview" />
+                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'is_schengen_member', 'basicPlaceholders' => $researchPlaceholders])
                         </div>
                     </div>
                 </div>
@@ -164,6 +176,7 @@
                                     <flux:error name="travelInfo.texts.short_description.{{ $locale }}" />
                                 </flux:field>
                                 <x-adminv2.ai-field-hint key="short_description_{{ $locale }}" :review="$aiReview" />
+                                @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'short_description_'.$locale, 'basicPlaceholders' => $researchPlaceholders])
                             </div>
                             <div>
                                 <flux:field>
@@ -173,6 +186,7 @@
                                     <flux:error name="travelInfo.texts.description.{{ $locale }}" />
                                 </flux:field>
                                 <x-adminv2.ai-field-hint key="description_{{ $locale }}" :review="$aiReview" />
+                                @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'description_'.$locale, 'basicPlaceholders' => $researchPlaceholders])
                             </div>
                             <div>
                                 <flux:field>
@@ -182,6 +196,7 @@
                                     <flux:error name="travelInfo.texts.known_for.{{ $locale }}" />
                                 </flux:field>
                                 <x-adminv2.ai-field-hint key="known_for_{{ $locale }}" :review="$aiReview" />
+                                @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'known_for_'.$locale, 'basicPlaceholders' => $researchPlaceholders])
                             </div>
                         </div>
                     @endforeach
@@ -205,18 +220,21 @@
                         <flux:label>Währungscode</flux:label>
                         <flux:input wire:model="currencyCode" maxlength="3" class="font-mono uppercase" placeholder="EUR" />
                         <x-adminv2.ai-field-hint key="currency_code" :review="$aiReview" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'currency_code', 'basicPlaceholders' => $researchPlaceholders])
                         <flux:error name="currencyCode" />
                     </flux:field>
                     <flux:field>
                         <flux:label>Währungsname</flux:label>
                         <flux:input wire:model="currencyName" maxlength="255" placeholder="Euro" />
                         <x-adminv2.ai-field-hint key="currency_name" :review="$aiReview" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'currency_name', 'basicPlaceholders' => $researchPlaceholders])
                         <flux:error name="currencyName" />
                     </flux:field>
                     <flux:field>
                         <flux:label>Währungssymbol</flux:label>
                         <flux:input wire:model="currencySymbol" maxlength="5" placeholder="€" />
                         <x-adminv2.ai-field-hint key="currency_symbol" :review="$aiReview" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'currency_symbol', 'basicPlaceholders' => $researchPlaceholders])
                         <flux:error name="currencySymbol" />
                     </flux:field>
                     <flux:field>
@@ -224,6 +242,7 @@
                         <flux:description>Beispiel: +49</flux:description>
                         <flux:input wire:model="phonePrefix" maxlength="10" placeholder="+49" />
                         <x-adminv2.ai-field-hint key="phone_prefix" :review="$aiReview" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'phone_prefix', 'basicPlaceholders' => $researchPlaceholders])
                         <flux:error name="phonePrefix" />
                     </flux:field>
                     <flux:field class="sm:col-span-2">
@@ -231,18 +250,21 @@
                         <flux:description>IANA-Name, bei mehreren Zeitzonen mit Komma – die erste ist die wichtigste.</flux:description>
                         <flux:input wire:model="timezone" maxlength="255" placeholder="Europe/Berlin" class="font-mono" />
                         <x-adminv2.ai-field-hint key="timezone" :review="$aiReview" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'timezone', 'basicPlaceholders' => $researchPlaceholders])
                         <flux:error name="timezone" />
                     </flux:field>
                     <flux:field>
                         <flux:label>Bevölkerung</flux:label>
                         <flux:input wire:model="population" inputmode="numeric" placeholder="z. B. 83200000" />
                         <x-adminv2.ai-field-hint key="population" :review="$aiReview" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'population', 'basicPlaceholders' => $researchPlaceholders])
                         <flux:error name="population" />
                     </flux:field>
                     <flux:field>
                         <flux:label>Fläche (km²)</flux:label>
                         <flux:input wire:model="areaKm2" inputmode="decimal" placeholder="z. B. 357588" />
                         <x-adminv2.ai-field-hint key="area_km2" :review="$aiReview" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'area_km2', 'basicPlaceholders' => $researchPlaceholders])
                         <flux:error name="areaKm2" />
                     </flux:field>
                 </div>
@@ -286,6 +308,7 @@
                         @endforeach
                     </datalist>
                     <x-adminv2.ai-field-hint key="languages" :review="$aiReview" />
+                    @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'languages', 'basicPlaceholders' => $researchPlaceholders])
                     <flux:error name="languageInput" />
                     <flux:error name="languages" />
                     <flux:error name="languages.*" />
@@ -305,6 +328,7 @@
                                 @endforeach
                             </div>
                             <x-adminv2.ai-field-hint key="territory_type" :review="$aiReview" />
+                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'territory_type', 'basicPlaceholders' => $researchPlaceholders])
                             <flux:error name="territoryType" />
                         </flux:field>
                         <div x-show="$wire.territoryType !== 'sovereign'" x-cloak class="sm:max-w-md">
@@ -318,6 +342,7 @@
                                 clearable
                             />
                             <x-adminv2.ai-field-hint key="parent_country" :review="$aiReview" />
+                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'parent_country', 'basicPlaceholders' => $researchPlaceholders])
                             <flux:error name="parentCountryId" />
                         </div>
                     </div>
@@ -334,6 +359,7 @@
                             @endforeach
                         </div>
                         <x-adminv2.ai-field-hint key="driving_side" :review="$aiReview" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'driving_side', 'basicPlaceholders' => $researchPlaceholders])
                         <flux:error name="drivingSide" />
                     </flux:field>
 
@@ -346,6 +372,7 @@
                                     <flux:label>{{ $label }}</flux:label>
                                     <flux:input wire:model="travelInfo.emergency.{{ $key }}" inputmode="tel" placeholder="{{ $key === 'general' ? '112' : '' }}" class="font-mono" />
                                     <x-adminv2.ai-field-hint key="emergency_{{ $key }}" :review="$aiReview" />
+                                    @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'emergency_'.$key, 'basicPlaceholders' => $researchPlaceholders])
                                     <flux:error name="travelInfo.emergency.{{ $key }}" />
                                 </flux:field>
                             @endforeach
@@ -369,6 +396,7 @@
                             @endforeach
                         </div>
                         <x-adminv2.ai-field-hint key="religions" :review="$aiReview" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'religions', 'basicPlaceholders' => $researchPlaceholders])
                         <flux:error name="travelInfo.religions" />
                         <flux:error name="travelInfo.religions.*" />
                     </flux:field>
@@ -416,6 +444,7 @@
                                 <flux:input wire:model="travelInfo.national_day.date" type="date" />
                                 <flux:description>Jahr = Ursprung, falls bekannt.</flux:description>
                                 <x-adminv2.ai-field-hint key="national_day_date" :review="$aiReview" />
+                                @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'national_day_date', 'basicPlaceholders' => $researchPlaceholders])
                                 <flux:error name="travelInfo.national_day.date" />
                             </flux:field>
                             <div>
@@ -427,6 +456,7 @@
                                             <flux:error name="travelInfo.national_day.name.{{ $locale }}" />
                                         </flux:field>
                                         <x-adminv2.ai-field-hint key="national_day_name_{{ $locale }}" :review="$aiReview" />
+                                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'national_day_name_'.$locale, 'basicPlaceholders' => $researchPlaceholders])
                                     </div>
                                 @endforeach
                             </div>
@@ -447,6 +477,7 @@
                                             <flux:error name="travelInfo.texts.{{ $field }}.{{ $locale }}" />
                                         </flux:field>
                                         <x-adminv2.ai-field-hint key="{{ $field }}_{{ $locale }}" :review="$aiReview" />
+                                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => $field.'_'.$locale, 'basicPlaceholders' => $researchPlaceholders])
                                     </div>
                                 @endforeach
                             </div>
@@ -542,12 +573,18 @@
                                         <x-adminv2.ai-field-hint key="tipping_{{ $category }}_to" :review="$aiReview" class="!mt-0" />
                                         <x-adminv2.ai-field-hint key="tipping_{{ $category }}_unit" :review="$aiReview" class="!mt-0" />
                                         <x-adminv2.ai-field-hint key="tipping_{{ $category }}_currency" :review="$aiReview" class="!mt-0" />
+                                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'tipping_'.$category.'_mode', 'researchLabel' => 'Art', 'basicPlaceholders' => $researchPlaceholders])
+                                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'tipping_'.$category.'_from', 'researchLabel' => 'Von', 'basicPlaceholders' => $researchPlaceholders])
+                                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'tipping_'.$category.'_to', 'researchLabel' => 'Bis', 'basicPlaceholders' => $researchPlaceholders])
+                                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'tipping_'.$category.'_unit', 'researchLabel' => 'Einheit', 'basicPlaceholders' => $researchPlaceholders])
+                                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'tipping_'.$category.'_currency', 'researchLabel' => 'Währung', 'basicPlaceholders' => $researchPlaceholders])
                                     </div>
                                     @foreach ($noteLocales as $locale)
                                         <div x-show="locale === @js($locale)" @if ($locale !== $sourceLocale) x-cloak @endif wire:key="tipping-{{ $category }}-{{ $locale }}">
                                             <flux:textarea wire:model="{{ $base }}.description.{{ $locale }}" rows="2" aria-label="Beschreibung {{ $label }} ({{ strtoupper($locale) }})" placeholder="Beschreibung{{ $locale === $sourceLocale ? '' : ' ('.strtoupper($locale).')' }} – z. B. Aufrunden üblich, Service oft enthalten" />
                                             <flux:error name="{{ $base }}.description.{{ $locale }}" />
                                             <x-adminv2.ai-field-hint key="tipping_{{ $category }}_description_{{ $locale }}" :review="$aiReview" />
+                                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'tipping_'.$category.'_description_'.$locale, 'basicPlaceholders' => $researchPlaceholders])
                                         </div>
                                     @endforeach
                                 </div>
@@ -579,6 +616,7 @@
                             <flux:label>Netzspannung (V)</flux:label>
                             <flux:input wire:model="travelInfo.voltage" inputmode="numeric" placeholder="230" />
                             <x-adminv2.ai-field-hint key="voltage" :review="$aiReview" />
+                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'voltage', 'basicPlaceholders' => $researchPlaceholders])
                             <flux:error name="travelInfo.voltage" />
                         </flux:field>
                         <flux:field>
@@ -589,6 +627,7 @@
                                 <flux:select.option value="60">60 Hz</flux:select.option>
                             </flux:select>
                             <x-adminv2.ai-field-hint key="frequency" :review="$aiReview" />
+                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'frequency', 'basicPlaceholders' => $researchPlaceholders])
                             <flux:error name="travelInfo.frequency" />
                         </flux:field>
                     </div>
@@ -611,6 +650,7 @@
                             @endforeach
                         </div>
                         <x-adminv2.ai-field-hint key="plug_types" :review="$aiReview" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'plug_types', 'basicPlaceholders' => $researchPlaceholders])
                         <flux:error name="travelInfo.plug_types" />
                         <flux:error name="travelInfo.plug_types.*" />
                     </flux:field>
@@ -636,6 +676,7 @@
                                     <flux:error name="travelInfo.texts.power_notes.{{ $locale }}" />
                                 </flux:field>
                                 <x-adminv2.ai-field-hint key="power_notes_{{ $locale }}" :review="$aiReview" />
+                                @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'power_notes_'.$locale, 'basicPlaceholders' => $researchPlaceholders])
                             </div>
                         @endforeach
                     </div>
@@ -687,6 +728,7 @@
                     @endif
 
                     <x-adminv2.ai-field-hint key="taxi_apps" :review="$aiReview" :applyable="false" />
+                    @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'taxi_apps', 'basicPlaceholders' => $researchPlaceholders])
                 </div>
                 @if ($record)
                     <livewire:admin-v2.ai-question-box area="countries" section="taxi_apps" :subject="$record" :title="$record->getName('de')" :key="'ai-question-taxi_apps'" />
@@ -785,6 +827,7 @@
                     @endif
 
                     <x-adminv2.ai-field-hint key="mobile_operators" :review="$aiReview" :applyable="false" />
+                    @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'mobile_operators', 'basicPlaceholders' => $researchPlaceholders])
                 </div>
                 @if ($record)
                     <livewire:admin-v2.ai-question-box area="countries" section="mobile_operators" :subject="$record" :title="$record->getName('de')" :key="'ai-question-mobile_operators'" />
@@ -946,6 +989,7 @@
                         </ul>
 
                         <x-adminv2.ai-field-hint key="holidays" :review="$aiReview" :applyable="false" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'holidays', 'basicPlaceholders' => $researchPlaceholders])
                     </div>
                 @else
                     <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Feiertage lassen sich erfassen, sobald das Land gespeichert ist.</p>
@@ -956,9 +1000,6 @@
             </x-adminv2.card>
 
             {{-- Risikoprofil: je Bereich eine Karte --}}
-            @php
-                $researchPlaceholders = \App\Support\AdminV2\AiAreas::placeholders('countries', 'basics');
-            @endphp
             @foreach ($categories as $key => $category)
                 <x-adminv2.card
                     :heading="$category['label']"
@@ -1109,6 +1150,7 @@
                                 <p>Kommt über den ISO-Code von flagcdn.com, wird nicht hochgeladen.</p>
                             </div>
                             <x-adminv2.ai-field-hint key="flag" :review="$aiReview" :applyable="false" class="!mt-0 w-full" />
+                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'flag', 'basicPlaceholders' => $researchPlaceholders])
                         </div>
 
                         {{-- Hochladen --}}
@@ -1219,6 +1261,7 @@
                         @endif
 
                         <x-adminv2.ai-field-hint key="images" :review="$aiReview" :applyable="false" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'images', 'basicPlaceholders' => $researchPlaceholders])
                     </div>
                 @else
                     <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Bilder lassen sich hochladen, sobald das Land gespeichert ist.</p>
@@ -1231,6 +1274,10 @@
             <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" :review="$aiReview" description="Mittelpunkt des Landes – dorthin setzt die Karte landesweite Ereignisse." collapsible collapse-key="country-coordinates">
                 @if ($record)
                     <livewire:admin-v2.ai-question-box area="countries" section="coordinates" :subject="$record" :title="$record->getName('de')" :key="'ai-question-coordinates'" />
+                    <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'lat', 'researchLabel' => 'Breitengrad', 'basicPlaceholders' => $researchPlaceholders])
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'lng', 'researchLabel' => 'Längengrad', 'basicPlaceholders' => $researchPlaceholders])
+                    </div>
                     <x-slot:map>
                         <x-adminv2.master-data.boundary-map :url="route('adminv2.master-data.boundaries.country', $record->id)" :lat="$lat" :lng="$lng" />
                     </x-slot:map>
