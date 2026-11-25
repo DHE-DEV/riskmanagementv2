@@ -125,6 +125,9 @@
                         </div>
                     </div>
                 </div>
+                @if ($record)
+                    <livewire:admin-v2.ai-question-box area="countries" section="basics" :subject="$record" :title="$record->getName('de')" :key="'ai-question-basics'" />
+                @endif
             </x-adminv2.card>
 
             {{-- Laenderbeschreibung: das Land allgemein, kurz und ausfuehrlich, je Sprache --}}
@@ -183,6 +186,9 @@
                         </div>
                     @endforeach
                 </div>
+                @if ($record)
+                    <livewire:admin-v2.ai-question-box area="countries" section="description" :subject="$record" :title="$record->getName('de')" :key="'ai-question-description'" />
+                @endif
             </x-adminv2.card>
 
             {{-- Weitere Informationen: Waehrung, Vorwahl, Zeitzone, Groesse – und was Reisende vor Ort brauchen --}}
@@ -448,6 +454,9 @@
                     </div>
                 </div>
                 </div>
+                @if ($record)
+                    <livewire:admin-v2.ai-question-box area="countries" section="details" :subject="$record" :title="$record->getName('de')" :key="'ai-question-details'" />
+                @endif
             </x-adminv2.card>
 
             {{-- Trinkgeld: je Bereich ein Rahmen von–bis und eine Beschreibung je Sprache --}}
@@ -546,6 +555,9 @@
                         @endforeach
                     </div>
                 </div>
+                @if ($record)
+                    <livewire:admin-v2.ai-question-box area="countries" section="tipping" :subject="$record" :title="$record->getName('de')" :key="'ai-question-tipping'" />
+                @endif
             </x-adminv2.card>
 
             {{-- Strom: Steckertypen mit Bild, Spannung und Frequenz --}}
@@ -628,6 +640,9 @@
                         @endforeach
                     </div>
                 </div>
+                @if ($record)
+                    <livewire:admin-v2.ai-question-box area="countries" section="power" :subject="$record" :title="$record->getName('de')" :key="'ai-question-power'" />
+                @endif
             </x-adminv2.card>
 
             {{-- Taxi-Apps: verbreitete Anbieter im Land --}}
@@ -673,6 +688,9 @@
 
                     <x-adminv2.ai-field-hint key="taxi_apps" :review="$aiReview" :applyable="false" />
                 </div>
+                @if ($record)
+                    <livewire:admin-v2.ai-question-box area="countries" section="taxi_apps" :subject="$record" :title="$record->getName('de')" :key="'ai-question-taxi_apps'" />
+                @endif
             </x-adminv2.card>
 
             {{-- Mobilfunkanbieter: Suche mit Autovervollstaendigung, Auswahl als Kacheln --}}
@@ -768,6 +786,9 @@
 
                     <x-adminv2.ai-field-hint key="mobile_operators" :review="$aiReview" :applyable="false" />
                 </div>
+                @if ($record)
+                    <livewire:admin-v2.ai-question-box area="countries" section="mobile_operators" :subject="$record" :title="$record->getName('de')" :key="'ai-question-mobile_operators'" />
+                @endif
             </x-adminv2.card>
 
             {{-- Feiertage: je Jahr mit Datum, Name und Kommentar je Sprache --}}
@@ -929,6 +950,9 @@
                 @else
                     <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Feiertage lassen sich erfassen, sobald das Land gespeichert ist.</p>
                 @endif
+                @if ($record)
+                    <livewire:admin-v2.ai-question-box area="countries" section="holidays" :subject="$record" :title="$record->getName('de')" :key="'ai-question-holidays'" />
+                @endif
             </x-adminv2.card>
 
             {{-- Risikoprofil: je Bereich eine Karte --}}
@@ -1046,6 +1070,9 @@
                             @endforeach
                         </div>
                     </div>
+                    @if ($record)
+                        <livewire:admin-v2.ai-question-box area="countries" :section="CountryRiskProfile::section($key)" :subject="$record" :title="$record->getName('de')" :key="'ai-question-risk-'.$key" />
+                    @endif
                 </x-adminv2.card>
             @endforeach
 
@@ -1188,10 +1215,14 @@
                 @else
                     <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">Bilder lassen sich hochladen, sobald das Land gespeichert ist.</p>
                 @endif
+                @if ($record)
+                    <livewire:admin-v2.ai-question-box area="countries" section="images" :subject="$record" :title="$record->getName('de')" :key="'ai-question-images'" />
+                @endif
             </x-adminv2.card>
 
             <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" :review="$aiReview" description="Mittelpunkt des Landes – dorthin setzt die Karte landesweite Ereignisse." collapsible collapse-key="country-coordinates">
                 @if ($record)
+                    <livewire:admin-v2.ai-question-box area="countries" section="coordinates" :subject="$record" :title="$record->getName('de')" :key="'ai-question-coordinates'" />
                     <x-slot:map>
                         <x-adminv2.master-data.boundary-map :url="route('adminv2.master-data.boundaries.country', $record->id)" :lat="$lat" :lng="$lng" />
                     </x-slot:map>

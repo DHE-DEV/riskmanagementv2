@@ -61,4 +61,7 @@
             </div>
         @endif
     </div>
+
+    {{-- Optionaler Zusatz unter den Feldern, z. B. die Frage an die KI --}}
+    {{ $slot }}
 </x-adminv2.card>
