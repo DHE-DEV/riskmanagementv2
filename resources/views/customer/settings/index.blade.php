@@ -139,7 +139,19 @@
             if ($customer->branch_management_active) {
                 $settingsTourSteps[] = ['target' => '#settings-nav-org', 'title' => 'Organisation', 'description' => '<strong>Stammdaten</strong> &ndash; Firmenadresse, Kontaktdaten und Abteilungen verwalten.<br><br><strong>Organisationsstruktur</strong> &ndash; Ihre Unternehmenshierarchie abbilden.<br><br><strong>Benutzerverwaltung</strong> &ndash; Mitarbeiter anlegen und Zugriffsrechte steuern.'];
             }
-            $settingsTourSteps[] = ['target' => '#settings-nav-tip', 'title' => 'Travel Information Platform', 'description' => 'Hier konfigurieren Sie die einzelnen Module der Plattform: <strong>Travel Requirements Service</strong>, <strong>Global Travel Monitor</strong>, <strong>Travel Alert</strong>, <strong>Travel Data</strong>, <strong>Travel Link</strong>, <strong>Travel Information</strong> und <strong>Connected Services</strong>.'];
+            $tipModuleLabels = collect([
+                'travel-requirements' => 'Travel Requirements Service',
+                'global-travel-monitor' => 'Global Travel Monitor',
+                'travel-alert' => 'Travel Alert',
+                'travel-data' => 'Travel Data',
+                'travel-link' => 'Travel Link',
+                'travel-information' => 'Travel Information',
+                'connected-services' => 'Connected Services',
+            ])->filter(fn ($label, $section) => $sectionEnabled($section))
+                ->map(fn ($label) => "<strong>{$label}</strong>");
+            if ($tipModuleLabels->isNotEmpty()) {
+                $settingsTourSteps[] = ['target' => '#settings-nav-tip', 'title' => 'Travel Information Platform', 'description' => 'Hier konfigurieren Sie die einzelnen Module der Plattform: '.$tipModuleLabels->join(', ', ' und ').'.'];
+            }
             $settingsTourSteps[] = ['target' => '.settings-content', 'title' => 'Einstellungsbereich', 'description' => 'Im Hauptbereich werden die Einstellungen des ausgewählten Menüpunkts angezeigt. Hier nehmen Sie Änderungen vor und speichern diese.', 'forceBelow' => true];
             $settingsTourSteps[] = ['target' => '#settings-nav-org', 'title' => 'Kostenlose Benutzerverwaltung', 'description' => 'Sie können <strong>kostenlos beliebig viele Benutzer</strong> in der Benutzerverwaltung anlegen. Jeder Benutzer erhält einen eigenen Zugang zur Passolution Travel Information Platform mit individuellen Berechtigungen.'];
         @endphp

@@ -231,3 +231,19 @@ it('filtert im Konten-Umschalter für Super-Admins auf Hauptaccounts', function 
         ->assertDontSee('Nur Hauptaccounts (mit Unteraccounts)');
     expect(array_column($this->actingAs($agency, 'customer')->getJson('/customer/account/accessible?main=1')->json('data'), 'id'))->toBe([$office->id]);
 });
+
+it('nennt ausgeblendete Connected Services weder im Menü noch im Rundgang', function () {
+    $customer = Customer::factory()->create(['customer_type' => 'business']);
+
+    $this->actingAs($customer, 'customer')
+        ->get(route('customer.settings', ['section' => 'travel-requirements']))
+        ->assertOk()
+        ->assertSee('Connected Services');
+
+    config(['customer_settings.sections.connected-services' => false]);
+
+    $this->actingAs($customer, 'customer')
+        ->get(route('customer.settings', ['section' => 'travel-requirements']))
+        ->assertOk()
+        ->assertDontSee('Connected Services');
+});
