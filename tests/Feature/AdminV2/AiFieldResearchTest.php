@@ -299,3 +299,15 @@ it('bietet die KI-Recherche erst an gespeicherten Laendern an', function () {
 
     countryEditor($this->spain)->assertSee('KI-Recherche: Breitengrad');
 });
+
+it('rendert die Schaltflaechen der KI-Recherche mit ausfuehrbaren Aufrufen', function () {
+    fakeOpenAi('{}');
+    $key = "'risk_security_crime_level'";
+
+    $component = countryEditor($this->spain)
+        ->assertSeeHtml('$wire.openAiResearch('.$key.')')
+        ->call('openAiResearch', CRIME)
+        ->assertSeeHtml('wire:click="sendAiResearch('.$key.')"');
+
+    expect($component->html())->not->toContain('@js(');
+});

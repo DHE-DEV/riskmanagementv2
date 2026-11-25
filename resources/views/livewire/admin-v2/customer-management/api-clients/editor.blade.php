@@ -49,7 +49,7 @@
                     <p class="mt-0.5">Bitte kopieren Sie den Token jetzt. Er wird nicht erneut angezeigt.</p>
                 </div>
                 <div class="flex shrink-0 items-center gap-2">
-                    <flux:button size="sm" icon="clipboard-document" x-on:click="navigator.clipboard.writeText(@js($newToken)).then(() => { copied = true; setTimeout(() => copied = false, 2000) })">
+                    <flux:button size="sm" icon="clipboard-document" x-on:click="navigator.clipboard.writeText({{ \Illuminate\Support\Js::from($newToken) }}).then(() => { copied = true; setTimeout(() => copied = false, 2000) })">
                         <span x-text="copied ? 'Kopiert' : 'Kopieren'">Kopieren</span>
                     </flux:button>
                     <flux:button size="sm" variant="ghost" wire:click="dismissToken">Ausblenden</flux:button>

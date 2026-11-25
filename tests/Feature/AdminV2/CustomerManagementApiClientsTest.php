@@ -243,6 +243,9 @@ it('erzeugt einen API-Token, zeigt ihn einmalig und widerruft alle Tokens', func
     $token = $client->tokens()->sole();
     $plain = $editor->get('newToken');
 
+    // Der Kopier-Knopf erhaelt den Token als JavaScript-Zeichenkette (nicht wörtlich "@js(...)").
+    $editor->assertSeeHtml('navigator.clipboard.writeText(\''.$plain.'\')');
+
     expect($token->name)->toBe('api-token')
         ->and($token->abilities)->toBe(['events:write'])
         ->and($token->expires_at->isSameDay(now()->addYear()))->toBeTrue()

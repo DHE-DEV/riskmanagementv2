@@ -33,11 +33,11 @@
     class="flex flex-col gap-2"
 >
     <div class="flex flex-wrap items-center gap-1">
-        <flux:button size="xs" variant="ghost" icon="sparkles" x-on:click="open = ! open; if (open) $wire.openAiResearch(@js($researchKey))">
+        <flux:button size="xs" variant="ghost" icon="sparkles" x-on:click="open = ! open; if (open) $wire.openAiResearch({{ \Illuminate\Support\Js::from($researchKey) }})">
             <span x-text="open ? 'KI-Recherche schließen' : @js('KI-Recherche'.(isset($researchLabel) ? ': '.$researchLabel : ''))"></span>
         </flux:button>
         @if ($researchRuns->isNotEmpty())
-            <flux:button size="xs" variant="ghost" icon="clock" wire:click="showAiResearchHistory(@js($researchKey))">Verlauf ({{ $researchRuns->count() }})</flux:button>
+            <flux:button size="xs" variant="ghost" icon="clock" wire:click="showAiResearchHistory({{ \Illuminate\Support\Js::from($researchKey) }})">Verlauf ({{ $researchRuns->count() }})</flux:button>
         @endif
     </div>
 
@@ -98,15 +98,15 @@
                         </flux:select>
                         <flux:error name="aiResearch.{{ $researchKey }}.model" />
                     </flux:field>
-                    <flux:button size="sm" variant="primary" icon="paper-airplane" wire:click="sendAiResearch(@js($researchKey))">Senden</flux:button>
+                    <flux:button size="sm" variant="primary" icon="paper-airplane" wire:click="sendAiResearch({{ \Illuminate\Support\Js::from($researchKey) }})">Senden</flux:button>
                 </div>
 
                 {{-- Als Vorlage speichern: gilt danach fuer alle Eintraege an diesem Feld --}}
                 <div class="flex flex-wrap items-center gap-2 border-t border-violet-200 pt-3 dark:border-violet-900">
                     @if ($researchState['template'] !== '')
-                        <flux:button size="xs" icon="bookmark" wire:click="saveAiResearchTemplate(@js($researchKey))">In Vorlage speichern</flux:button>
+                        <flux:button size="xs" icon="bookmark" wire:click="saveAiResearchTemplate({{ \Illuminate\Support\Js::from($researchKey) }})">In Vorlage speichern</flux:button>
                         <flux:button size="xs" variant="ghost" x-on:click="saving = ! saving">Als neue Vorlage …</flux:button>
-                        <flux:button size="xs" variant="ghost" icon="trash" wire:click="deleteAiResearchTemplate(@js($researchKey))" wire:confirm="Diese Vorlage für alle Einträge löschen?">Vorlage löschen</flux:button>
+                        <flux:button size="xs" variant="ghost" icon="trash" wire:click="deleteAiResearchTemplate({{ \Illuminate\Support\Js::from($researchKey) }})" wire:confirm="Diese Vorlage für alle Einträge löschen?">Vorlage löschen</flux:button>
                     @else
                         <flux:button size="xs" icon="bookmark" x-on:click="saving = ! saving">Als Vorlage speichern …</flux:button>
                     @endif
@@ -117,7 +117,7 @@
                         <flux:input wire:model="aiResearch.{{ $researchKey }}.name" size="sm" placeholder="Name der Vorlage, z. B. „Kriminalität nach AA“" />
                         <flux:error name="aiResearch.{{ $researchKey }}.name" />
                     </flux:field>
-                    <flux:button size="sm" variant="primary" wire:click="saveAiResearchTemplate(@js($researchKey), true)" x-on:click="saving = false">Speichern</flux:button>
+                    <flux:button size="sm" variant="primary" wire:click="saveAiResearchTemplate({{ \Illuminate\Support\Js::from($researchKey) }}, true)" x-on:click="saving = false">Speichern</flux:button>
                 </div>
             </div>
         @endif
