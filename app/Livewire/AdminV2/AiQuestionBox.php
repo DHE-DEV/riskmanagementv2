@@ -5,12 +5,8 @@ namespace App\Livewire\AdminV2;
 use App\Jobs\AskAiQuestionJob;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Models\AiQuestion;
-use App\Services\Ai\ClaudeService;
-use App\Services\Ai\GeminiService;
-use App\Services\OpenAiModelService;
 use App\Support\AdminV2\AiAreas;
-use App\Support\AiProviders;
-use App\Support\AiSettings;
+use App\Support\AdminV2\AiModelOptions;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -18,7 +14,6 @@ use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
-use Throwable;
 
 /**
  * Freie Frage an die KI unter einem Abschnitt eines Eintrags: Anbieter und
@@ -34,11 +29,7 @@ class AiQuestionBox extends Component
     public const LIMIT = 5;
 
     /** Anbieter => Bezeichnung in der Auswahl */
-    public const PROVIDER_LABELS = [
-        AiProviders::OPENAI => 'ChatGPT',
-        AiProviders::ANTHROPIC => 'Claude',
-        AiProviders::GEMINI => 'Gemini',
-    ];
+    public const PROVIDER_LABELS = AiModelOptions::PROVIDER_LABELS;
 
     #[Locked]
     public string $area = '';
@@ -84,7 +75,7 @@ class AiQuestionBox extends Component
     #[Computed]
     public function providers(): array
     {
-        return array_filter(self::PROVIDER_LABELS, fn (string $label, string $provider) => filled(AiProviders::apiKey($provider)), ARRAY_FILTER_USE_BOTH);
+        return AiModelOptions::providers();
     }
 
     /**
@@ -95,12 +86,7 @@ class AiQuestionBox extends Component
     #[Computed]
     public function modelOptions(): array
     {
-        return match ($this->provider) {
-            AiProviders::OPENAI => $this->openAiModels(),
-            AiProviders::ANTHROPIC => ClaudeService::MODELS,
-            AiProviders::GEMINI => $this->geminiModels(),
-            default => [],
-        };
+        return AiModelOptions::models($this->provider);
     }
 
     /**
@@ -114,6 +100,7 @@ class AiQuestionBox extends Component
         return AiQuestion::query()
             ->where('user_id', auth('web')->id())
             ->forSection($this->area, $this->section, $this->subject)
+            ->whereNull('field')
             ->latest('id')
             ->limit(self::LIMIT)
             ->get();
@@ -195,52 +182,10 @@ class AiQuestionBox extends Component
     }
 
     /**
-     * Das voreingestellte Modell des Anbieters: bei ChatGPT das unter System > KI
-     * gewaehlte, sonst das erste der Liste.
+     * Das voreingestellte Modell des gewaehlten Anbieters.
      */
     protected function defaultModel(): string
     {
-        $options = array_keys($this->modelOptions);
-
-        if ($this->provider === AiProviders::OPENAI && in_array(AiSettings::model(), $options, true)) {
-            return AiSettings::model();
-        }
-
-        return (string) ($options[0] ?? '');
-    }
-
-    /**
-     * Die Modelle des OpenAI-Schluessels, ersatzweise die der Preisliste.
-     *
-     * @return array<string, string>
-     */
-    protected function openAiModels(): array
-    {
-        try {
-            $ids = array_column(app(OpenAiModelService::class)->chatModels(), 'id');
-        } catch (Throwable) {
-            $ids = [];
-        }
-
-        $ids = $ids ?: array_values(array_filter(
-            array_keys(config('ai_prices.models', [])),
-            fn (string $id) => AiProviders::forModel($id) === AiProviders::OPENAI,
-        ));
-
-        return array_combine($ids, $ids) ?: [];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    protected function geminiModels(): array
-    {
-        try {
-            $models = app(GeminiService::class)->models();
-        } catch (Throwable) {
-            return [];
-        }
-
-        return collect($models)->mapWithKeys(fn (string $label, string $id) => [$id => $label !== '' ? $label.' ('.$id.')' : $id])->all();
+        return AiModelOptions::defaultModel($this->provider);
     }
 }

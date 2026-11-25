@@ -956,6 +956,9 @@
             </x-adminv2.card>
 
             {{-- Risikoprofil: je Bereich eine Karte --}}
+            @php
+                $researchPlaceholders = \App\Support\AdminV2\AiAreas::placeholders('countries', 'basics');
+            @endphp
             @foreach ($categories as $key => $category)
                 <x-adminv2.card
                     :heading="$category['label']"
@@ -969,6 +972,9 @@
                         <flux:modal.trigger name="translate-risk-notes">
                             <flux:button size="sm" variant="ghost" icon="language">Übersetzen</flux:button>
                         </flux:modal.trigger>
+                        @if ($record)
+                            <flux:button size="sm" variant="ghost" icon="clock" wire:click="showAiResearchHistory('*')">KI-Verlauf</flux:button>
+                        @endif
                         <x-adminv2.ai-check-button :section="CountryRiskProfile::section($key)" />
                     </x-slot:actions>
                     <div x-data="{ locale: @js($sourceLocale) }" class="flex flex-col gap-5">
@@ -1066,13 +1072,15 @@
                                             </div>
                                         @endforeach
                                     @endif
+
+                                    {{-- KI-Recherche genau dieses Feldes: Vorlage, Prompt mit Platzhaltern, KI und Modell --}}
+                                    @if ($record)
+                                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => $hintKey, 'basicPlaceholders' => $researchPlaceholders])
+                                    @endif
                                 </div>
                             @endforeach
                         </div>
                     </div>
-                    @if ($record)
-                        <livewire:admin-v2.ai-question-box area="countries" :section="CountryRiskProfile::section($key)" :subject="$record" :title="$record->getName('de')" :key="'ai-question-risk-'.$key" />
-                    @endif
                 </x-adminv2.card>
             @endforeach
 
@@ -1421,6 +1429,12 @@
             </div>
         </div>
     </flux:modal>
+
+    {{-- KI-Recherche je Feld: offene Anfragen abfragen, Verlauf --}}
+    <div @if ($aiResearchOpenIds !== []) wire:poll.4s="checkAiResearch" @endif class="hidden"></div>
+    @if ($record)
+        @include('livewire.admin-v2.partials.ai-research-history', ['title' => $record->getName('de')])
+    @endif
 
     <x-adminv2.ai-check-modal area="countries" :section="$aiSection" :checks="$this->aiChecks" :data="$this->aiData" :check-id="$aiCheckId" :prompt-draft="$aiPromptDraft" :result="$aiResult" :error="$aiError" :models="$this->aiModelOptions" :save-as-check="$aiSaveAsCheck" :review="$aiReview" :open-reviews="$this->aiOpenReviews" :finished-reviews="$this->aiFinishedReviews" :note-keys="CountryRiskProfile::noteKeys()" :title="$record?->getName('de')" />
 </form>

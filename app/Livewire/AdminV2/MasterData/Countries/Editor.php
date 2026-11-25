@@ -5,6 +5,7 @@ namespace App\Livewire\AdminV2\MasterData\Countries;
 use App\Livewire\AdminV2\Concerns\AuthorizesAdminV2;
 use App\Livewire\AdminV2\Concerns\EditsCoordinates;
 use App\Livewire\AdminV2\Concerns\EditsMasterData;
+use App\Livewire\AdminV2\Concerns\ResearchesAiFields;
 use App\Livewire\AdminV2\Concerns\RunsAiChecks;
 use App\Models\City;
 use App\Models\Continent;
@@ -18,6 +19,7 @@ use App\Models\Region;
 use App\Models\TaxiApp;
 use App\Services\CountryImageService;
 use App\Services\DeepLTranslationService;
+use App\Support\AdminV2\AiAreas;
 use App\Support\AdminV2\CountryLanguages;
 use App\Support\AdminV2\CountryRiskProfile;
 use App\Support\AdminV2\CountryTravelInfo;
@@ -38,7 +40,7 @@ use Livewire\WithFileUploads;
 #[Layout('components.layouts.adminv2.app')]
 class Editor extends Component
 {
-    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, RunsAiChecks, WithFileUploads;
+    use AuthorizesAdminV2, EditsCoordinates, EditsMasterData, ResearchesAiFields, RunsAiChecks, WithFileUploads;
 
     /** Seitengroessen der Listen in der Seitenspalte; "all" = alle auf einmal. */
     public const RELATED_LIMITS = ['15', '30', '100', 'all'];
@@ -1174,6 +1176,8 @@ class Editor extends Component
 
         unset($this->related, $this->boundary, $this->overallRisk, $this->taxiAppOptions, $this->selectedTaxiApps, $this->selectedMobileOperators, $this->mobileOperatorMatches);
 
+        $this->markAiResearchSaved();
+
         $this->finishSave($record, $created, $another, $unchanged);
     }
 
@@ -1404,6 +1408,57 @@ class Editor extends Component
     protected function aiArea(): string
     {
         return 'countries';
+    }
+
+    /**
+     * KI-Recherche je Feld: alle Felder des Risikoprofils.
+     *
+     * @return array<string, array{label: string, section: string, format: ?string, note: bool}>
+     */
+    protected function aiResearchFields(): array
+    {
+        $fields = [];
+
+        foreach (CountryRiskProfile::categories() as $category => $definition) {
+            foreach ($definition['fields'] as $field => $meta) {
+                $fields[CountryRiskProfile::placeholderKey($category, $field)] = [
+                    'label' => $definition['label'].' › '.$meta['label'],
+                    'section' => CountryRiskProfile::section($category),
+                    'format' => CountryRiskProfile::formatHint($meta),
+                    'note' => CountryRiskProfile::hasNote($meta),
+                ];
+            }
+        }
+
+        return $fields;
+    }
+
+    protected function aiResearchDisplay(string $key, string $value): ?string
+    {
+        $resolved = CountryRiskProfile::resolvePlaceholder($key);
+
+        if (! $resolved) {
+            return null;
+        }
+
+        $parsed = CountryRiskProfile::parseSuggestion($resolved[2], $value);
+
+        return match (true) {
+            $parsed === null => null,
+            $resolved[2]['type'] === 'level' => $parsed.' – '.(CountryRiskProfile::LEVELS[(int) $parsed] ?? ''),
+            $resolved[2]['type'] === 'bool' => $parsed ? 'Ja' : 'Nein',
+            default => (string) $parsed,
+        };
+    }
+
+    /**
+     * Platzhalter zum Einfuegen: die Grunddaten und alle Felder des Risikoprofils.
+     *
+     * @return array<string, string>
+     */
+    protected function aiResearchPlaceholders(): array
+    {
+        return AiAreas::placeholders('countries', 'basics') + CountryRiskProfile::placeholders();
     }
 
     /**

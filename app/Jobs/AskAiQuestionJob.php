@@ -5,14 +5,19 @@ namespace App\Jobs;
 use App\Models\AiQuestion;
 use App\Support\AdminV2\AiAreas;
 use App\Support\AiProviders;
+use App\Support\AiSettings;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Throwable;
 
 /**
- * Beantwortet eine freie Frage an die KI im Hintergrund – mit Websuche des
+ * Beantwortet eine Anfrage an die KI im Hintergrund – mit Websuche des
  * gewaehlten Anbieters (ChatGPT, Claude oder Gemini). Zustand und Antwort
- * stehen an der Frage (AiQuestion); das Formular fragt sie ab.
+ * stehen an der Anfrage (AiQuestion); das Formular fragt sie ab.
+ *
+ * Bei einer Feldrecherche steht der fertige Prompt (mit aufgeloesten
+ * Platzhaltern und dem verlangten Antwortformat) schon an der Anfrage; die
+ * Antwort wird in Wert und Begruendung zerlegt.
  */
 class AskAiQuestionJob implements ShouldQueue
 {
@@ -46,18 +51,22 @@ class AskAiQuestionJob implements ShouldQueue
 
         try {
             $service = AiProviders::webSearchFor($question->model);
-            $answer = $service->searchWeb($this->prompt($question), ['model' => $question->model, 'timeout' => self::TIMEOUT]);
+            $answer = $service->searchWeb($question->prompt ?: $this->prompt($question), ['model' => $question->model, 'timeout' => self::TIMEOUT]);
+            $usage = $service->lastUsage();
+            $suggestion = $question->field ? self::parseSuggestion($answer) : ['value' => null, 'note' => null];
 
             $question->update([
                 'status' => AiQuestion::STATUS_DONE,
                 'answer' => $answer,
+                'value' => $suggestion['value'],
+                'note' => $suggestion['note'],
                 'sources' => collect($service->lastSources())
                     ->filter(fn (array $source) => preg_match('#^https?://#i', (string) ($source['url'] ?? '')))
                     ->map(fn (array $source) => ['url' => $source['url'], 'title' => $source['title'] ?? null])
                     ->take(20)
                     ->values()
                     ->all(),
-                'usage' => $service->lastUsage(),
+                'usage' => $usage ? $usage + ['cost' => AiSettings::cost($usage['model'], $usage['input_tokens'], $usage['output_tokens'])] : null,
                 'finished_at' => now(),
             ]);
         } catch (Throwable $exception) {
@@ -67,6 +76,34 @@ class AskAiQuestionJob implements ShouldQueue
                 'finished_at' => now(),
             ]);
         }
+    }
+
+    /**
+     * Wert und Begruendung aus der Antwort einer Feldrecherche (JSON, auch in
+     * einem Codeblock). Passt die Antwort nicht, bleiben beide leer – die
+     * Rohantwort steht trotzdem an der Anfrage.
+     *
+     * @return array{value: ?string, note: ?string}
+     */
+    public static function parseSuggestion(string $answer): array
+    {
+        $start = strpos($answer, '{');
+        $end = strrpos($answer, '}');
+        $data = $start !== false && $end > $start ? json_decode(substr($answer, $start, $end - $start + 1), true) : null;
+
+        $text = function (mixed $value): ?string {
+            if (is_bool($value)) {
+                return $value ? 'Ja' : 'Nein';
+            }
+
+            $value = is_scalar($value) ? trim((string) $value) : '';
+
+            return $value === '' || in_array(mb_strtolower($value), ['null', 'unknown', 'unbekannt'], true) ? null : $value;
+        };
+
+        return is_array($data)
+            ? ['value' => $text($data['value'] ?? null), 'note' => $text($data['note'] ?? null)]
+            : ['value' => null, 'note' => null];
     }
 
     /**

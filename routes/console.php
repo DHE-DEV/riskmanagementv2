@@ -135,8 +135,9 @@ Schedule::command('app-devices:prune-transfers')
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/app-devices-prune-transfers.log'));
 
-// Auftraege der KI-Feldpruefung und freie KI-Fragen aufraeumen (aelter als 30 Tage)
-Schedule::command('model:prune', ['--model' => [\App\Models\AiFieldReview::class, \App\Models\AiQuestion::class]])
+// Auftraege der KI-Feldpruefung aufraeumen (aelter als 30 Tage) – KI-Fragen und
+// Feldrecherchen (AiQuestion) bleiben als Protokoll dauerhaft.
+Schedule::command('model:prune', ['--model' => [\App\Models\AiFieldReview::class]])
     ->dailyAt('04:40')
     ->withoutOverlapping()
     ->runInBackground()
