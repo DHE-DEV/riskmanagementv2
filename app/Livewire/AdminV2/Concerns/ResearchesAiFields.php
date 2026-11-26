@@ -8,6 +8,7 @@ use App\Models\AiQuestion;
 use App\Services\AiCheckService;
 use App\Support\AdminV2\AiAreas;
 use App\Support\AdminV2\AiModelOptions;
+use App\Support\AiCitations;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
@@ -227,14 +228,17 @@ trait ResearchesAiFields
             return;
         }
 
-        if ($field['applyable'] && $run->value !== null && ($this->aiResearchDisplay($run->field, $run->value) === null || ! $this->aiApply($run->field, $run->value))) {
+        $value = $run->value !== null ? (string) AiCitations::strip($run->value) : null;
+
+        if ($field['applyable'] && $value !== null && ($this->aiResearchDisplay($run->field, $value) === null || ! $this->aiApply($run->field, $value))) {
             $this->dispatch('adminv2-toast', message: 'Dieser Vorschlag passt nicht ins Feld – bitte von Hand eintragen.', variant: 'danger');
 
             return;
         }
 
         if ($field['note'] && $run->note !== null) {
-            $this->aiApplyNote($run->field, $run->note);
+            // Auch aeltere Antworten: Quellenverweise der Websuche gehoeren nicht in die Notiz.
+            $this->aiApplyNote($run->field, (string) AiCitations::strip($run->note));
         }
 
         $run->update([

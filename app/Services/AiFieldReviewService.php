@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Support\AdminV2\AiAreas;
+use App\Support\AiCitations;
 use App\Support\AiProviders;
 use App\Support\AiSettings;
 
@@ -198,19 +199,11 @@ class AiFieldReviewService
     }
 
     /**
-     * Quellenverweise, die die Websuche in den Text setzt ("([seite.de](https://…))"), entfernen.
+     * Quellenverweise, die die Websuche in den Text setzt, entfernen.
      */
     protected function withoutCitations(?string $text): ?string
     {
-        if ($text === null) {
-            return null;
-        }
-
-        $text = preg_replace('/\s*\(\[[^\]]*\]\(https?:[^)\s]+\)\)/u', '', $text) ?? $text;
-        $text = preg_replace('/\[([^\]]+)\]\(https?:[^)\s]+\)/u', '$1', $text) ?? $text;
-        $text = preg_replace('/[ \t]+([.,;:])/u', '$1', $text) ?? $text;
-
-        return trim($text);
+        return AiCitations::strip($text);
     }
 
     /**
@@ -218,8 +211,6 @@ class AiFieldReviewService
      */
     protected function sourceUrl(string $url): string
     {
-        $url = preg_replace('/([?&])utm_source=openai(&|$)/', '$1', trim($url)) ?? $url;
-
-        return rtrim($url, '?&');
+        return AiCitations::cleanUrl($url);
     }
 }

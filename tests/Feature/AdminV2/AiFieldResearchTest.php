@@ -114,6 +114,19 @@ it('liefert Wert, Begruendung, Quellen und Kosten und laesst sie per Schaltflaec
         ->and($this->spain->fresh()->risk_profile['security']['crime_level'])->toBe(3);
 });
 
+it('uebernimmt auch aeltere Antworten ohne Quellenverweise in die Notiz', function () {
+    fakeOpenAi('{}');
+    $run = AiQuestion::factory()->for($this->admin)->answered()->create([
+        'subject_type' => $this->spain->getMorphClass(), 'subject_id' => $this->spain->id, 'section' => 'risk_security', 'field' => 'risk_security_overall_risk_level',
+        'value' => '2', 'note' => 'Geringes Risiko ([auswaertiges-amt.de](https://www.auswaertiges-amt.de/x?utm_source=openai)).',
+    ]);
+
+    countryEditor($this->spain)
+        ->call('applyAiResearch', $run->id)
+        ->assertSet('riskProfile.security.overall_risk_level', '2')
+        ->assertSet('riskProfile.security.notes.overall_risk_level.de', 'Geringes Risiko.');
+});
+
 it('uebernimmt keinen Vorschlag, der nicht ins Feld passt', function () {
     fakeOpenAi('{"value": "ziemlich gefährlich", "note": "Unklar."}');
 
@@ -232,6 +245,7 @@ it('zerlegt die Antwort der KI in Wert und Begruendung', function (string $answe
     'nicht feststellbar' => ['{"value": null, "note": "Keine Daten."}', null, 'Keine Daten.'],
     'Ja/Nein' => ['{"value": true}', 'Ja', null],
     'kein JSON' => ['Die Kriminalität ist mittel.', null, null],
+    'Quellenverweis der Websuche' => ['{"value": "2 – Niedrig", "note": "Spanien gilt als sicher ([auswaertiges-amt.de](https://www.auswaertiges-amt.de/de/spanien?utm_source=openai)). Vorsicht vor [Taschendieben](https://example.org/x)."}', '2 – Niedrig', 'Spanien gilt als sicher. Vorsicht vor Taschendieben.'],
 ]);
 
 it('behaelt das Protokoll, wenn der Benutzer geloescht wird', function () {

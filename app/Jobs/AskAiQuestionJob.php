@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\AiQuestion;
 use App\Support\AdminV2\AiAreas;
+use App\Support\AiCitations;
 use App\Support\AiProviders;
 use App\Support\AiSettings;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -62,7 +63,8 @@ class AskAiQuestionJob implements ShouldQueue
                 'note' => $suggestion['note'],
                 'sources' => collect($service->lastSources())
                     ->filter(fn (array $source) => preg_match('#^https?://#i', (string) ($source['url'] ?? '')))
-                    ->map(fn (array $source) => ['url' => $source['url'], 'title' => $source['title'] ?? null])
+                    ->map(fn (array $source) => ['url' => AiCitations::cleanUrl($source['url']), 'title' => $source['title'] ?? null])
+                    ->unique('url')
                     ->take(20)
                     ->values()
                     ->all(),
@@ -101,8 +103,9 @@ class AskAiQuestionJob implements ShouldQueue
             return $value === '' || in_array(mb_strtolower($value), ['null', 'unknown', 'unbekannt'], true) ? null : $value;
         };
 
+        // Die Websuche setzt Quellenverweise in den Text, auch wenn der Prompt das untersagt.
         return is_array($data)
-            ? ['value' => $text($data['value'] ?? null), 'note' => $text($data['note'] ?? null)]
+            ? ['value' => AiCitations::strip($text($data['value'] ?? null)) ?: null, 'note' => AiCitations::strip($text($data['note'] ?? null)) ?: null]
             : ['value' => null, 'note' => null];
     }
 
