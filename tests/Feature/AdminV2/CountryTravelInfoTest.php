@@ -42,7 +42,7 @@ it('speichert Mutterland, Fahrseite, Fuehrerschein und Reiseinformationen in meh
 
     Livewire::test(CountryEditor::class, ['country' => $martinique->id])
         ->assertDontSee('Gebietstyp')
-        ->assertSee('Nur bei abhängigen Gebieten')
+        ->assertSee('Wofür ist das Feld „Mutterland“?')->assertSee('Nur bei abhängigen Gebieten')
         ->set('parentCountryId', (string) $france->id)
         ->set('drivingSide', 'right')
         ->set('travelInfo.driving_permit', 'recommended')
@@ -373,8 +373,11 @@ it('bietet die KI-Pruefung fuer Reiseinformationen und Bilder an und uebernimmt 
         ->and($apply('intro_de', 'Karibikinsel.'))->toBeTrue()
         ->and($apply('unbekannt', 'x'))->toBeFalse();
 
-    expect(CountryTravelInfo::placeholders())->toHaveKeys(['currency_notes_de', 'parent_country', 'driving_permit', 'emergency_fire', 'religions', 'national_day_date', 'national_day_name_de', 'intro_de'])
+    expect(CountryTravelInfo::placeholders())->toHaveKeys(['currency_notes_de', 'driving_permit', 'emergency_fire', 'religions', 'national_day_date', 'national_day_name_de', 'intro_de'])
         ->and(CountryTravelInfo::placeholders())->not->toHaveKey('territory_type')
+        // Das Mutterland steht in den Grunddaten.
+        ->and(CountryTravelInfo::placeholders())->not->toHaveKey('parent_country')
+        ->and(\App\Support\AdminV2\AiAreas::placeholders('countries', 'basics'))->toHaveKey('parent_country')
         ->and(CountryTravelInfo::placeholders())->not->toHaveKey('plug_types')
         ->and(CountryTravelInfo::placeholders())->not->toHaveKey('timezones')
         ->and(\App\Support\AdminV2\AiAreas::placeholders('countries', 'details'))->toHaveKeys(['timezone', 'currency_notes_de', 'driving_permit', 'emergency_police', 'intro_de'])

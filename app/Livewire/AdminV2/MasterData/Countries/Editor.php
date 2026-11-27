@@ -1680,6 +1680,7 @@ class Editor extends Component
     protected function aiReviewHint(string $section): ?string
     {
         return match ($section) {
+            'basics' => 'Mutterland nur bei abhängigen Gebieten (z. B. Frankreich für Martinique, Dänemark für Grönland), bei eigenständigen Staaten leer.',
             'description' => CountryTravelInfo::descriptionReviewHint(),
             'details' => CountryLanguages::reviewHint().' '.CountryTravelInfo::reviewHint(),
             'tipping' => CountryTravelInfo::tippingReviewHint(),

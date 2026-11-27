@@ -535,7 +535,6 @@ class CountryTravelInfo
         }
 
         $placeholders += [
-            'parent_country' => 'Mutterland',
             'driving_side' => 'Fahrseite',
             'driving_permit' => 'Internationaler Führerschein',
         ];
@@ -564,7 +563,7 @@ class CountryTravelInfo
      */
     public static function reviewHint(): string
     {
-        return 'Mutterland nur bei abhängigen Gebieten (z. B. Frankreich für Martinique), sonst leer. Fahrseite: '.implode(', ', self::DRIVING_SIDES)
+        return 'Fahrseite: '.implode(', ', self::DRIVING_SIDES)
             .'. Internationaler Führerschein: '.implode(', ', self::DRIVING_PERMITS).' – ob Reisende mit deutschem Führerschein zusätzlich einen internationalen brauchen.'
             .' Hinweise zur Währung: was Reisende beim Bezahlen wissen sollten, z. B. akzeptierte Fremdwährungen, Bargeld oder Karte.'
             .' Notrufnummern als Ziffern. Zeitzone als IANA-Name (z. B. Europe/Berlin), mehrere mit Komma.'

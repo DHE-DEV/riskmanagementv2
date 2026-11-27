@@ -136,6 +136,30 @@
                             @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'is_schengen_member', 'basicPlaceholders' => $researchPlaceholders])
                         </div>
                     </div>
+
+                    {{-- Mutterland: nur bei abhaengigen Gebieten, z. B. Frankreich fuer Martinique --}}
+                    <div x-data="{ info: false }" class="flex flex-col gap-2 sm:max-w-md">
+                        <div class="flex items-center gap-1">
+                            <flux:label>Mutterland</flux:label>
+                            <button type="button" x-on:click="info = ! info" x-bind:aria-expanded="info" aria-label="Wofür ist das Feld „Mutterland“?" title="Wofür ist das Feld?" class="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-sky-600 transition hover:bg-sky-50 hover:text-sky-800 focus-visible:outline-2 focus-visible:outline-sky-500 dark:text-sky-400 dark:hover:bg-sky-500/10 dark:hover:text-sky-300"><flux:icon.information-circle class="size-5" /></button>
+                        </div>
+                        <div x-show="info" x-cloak class="rounded-lg bg-sky-50 px-3 py-2 text-sm leading-relaxed text-zinc-700 dark:bg-sky-500/10 dark:text-zinc-300">
+                            Nur bei abhängigen Gebieten: der Staat, zu dem das Gebiet gehört – z. B. Frankreich für Martinique, Dänemark für Grönland, die USA für Puerto Rico. Bei eigenständigen Staaten wie Italien bleibt das Feld leer.
+                            Daraus ergibt sich, ob das Land in API und Apps als abhängiges Gebiet oder als eigenständiger Staat gilt.
+                        </div>
+                        <x-adminv2.search-select
+                            label="Mutterland"
+                            model="parentCountryId"
+                            :selected="$parentCountryId"
+                            :options="$this->parentOptions"
+                            placeholder="Kein Mutterland (eigenständiger Staat)"
+                            search-placeholder="Land suchen …"
+                            clearable
+                        />
+                        <x-adminv2.ai-field-hint key="parent_country" :review="$aiReview" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'parent_country', 'basicPlaceholders' => $researchPlaceholders])
+                        <flux:error name="parentCountryId" />
+                    </div>
                 </div>
                 @if ($record)
                     <livewire:admin-v2.ai-question-box area="countries" section="basics" :subject="$record" :title="$record->getName('de')" :key="'ai-question-basics'" />
@@ -359,26 +383,6 @@
                 </flux:field>
 
                 <div class="flex flex-col gap-6 border-t border-zinc-100 pt-6 dark:border-zinc-800">
-                    {{-- Mutterland: nur bei abhaengigen Gebieten, z. B. Frankreich fuer Martinique --}}
-                    <div class="flex flex-col gap-5">
-                        <div class="flex flex-col gap-2 sm:max-w-md">
-                            <flux:label>Mutterland</flux:label>
-                            <flux:description>Nur bei abhängigen Gebieten: der Staat, zu dem das Gebiet gehört – z. B. Frankreich für Martinique, Dänemark für Grönland. Bei eigenständigen Staaten leer lassen.</flux:description>
-                            <x-adminv2.search-select
-                                label="Mutterland"
-                                model="parentCountryId"
-                                :selected="$parentCountryId"
-                                :options="$this->parentOptions"
-                                placeholder="Kein Mutterland (eigenständiger Staat)"
-                                search-placeholder="Land suchen …"
-                                clearable
-                            />
-                            <x-adminv2.ai-field-hint key="parent_country" :review="$aiReview" />
-                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'parent_country', 'basicPlaceholders' => $researchPlaceholders])
-                            <flux:error name="parentCountryId" />
-                        </div>
-                    </div>
-
                     {{-- Fahrseite --}}
                     <flux:field>
                         <flux:label>Fahrseite</flux:label>
