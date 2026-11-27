@@ -33,7 +33,7 @@ function travelCountry(string $german, string $iso, string $iso3, array $attribu
     ], $attributes));
 }
 
-it('speichert Gebietstyp, Fahrseite und Reiseinformationen in mehreren Sprachen', function () {
+it('speichert Mutterland, Fahrseite, Fuehrerschein und Reiseinformationen in mehreren Sprachen', function () {
     $this->seed(CurrencySeeder::class);
     $france = travelCountry('Frankreich', 'FR', 'FRA');
     $martinique = travelCountry('Martinique', 'MQ', 'MTQ');
@@ -41,10 +41,11 @@ it('speichert Gebietstyp, Fahrseite und Reiseinformationen in mehreren Sprachen'
     $this->actingAs(travelAdmin());
 
     Livewire::test(CountryEditor::class, ['country' => $martinique->id])
-        ->assertSet('territoryType', 'sovereign')
-        ->set('territoryType', 'dependent')
+        ->assertDontSee('Gebietstyp')
         ->set('parentCountryId', (string) $france->id)
         ->set('drivingSide', 'right')
+        ->set('travelInfo.driving_permit', 'recommended')
+        ->set('travelInfo.texts.currency_notes.de', 'US-Dollar werden fast überall akzeptiert.')
         ->set('travelInfo.plug_types', ['F', 'C', 'E'])
         ->set('travelInfo.voltage', '220')
         ->set('travelInfo.frequency', '50')
@@ -91,6 +92,7 @@ it('speichert Gebietstyp, Fahrseite und Reiseinformationen in mehreren Sprachen'
             'frequency' => 50,
             'emergency' => ['general' => '112', 'police' => '17'],
             'religions' => ['islam', 'christianity', 'none'],
+            'driving_permit' => 'recommended',
             'national_day' => ['date' => '1848-05-22', 'name' => ['de' => 'Tag der Abschaffung der Sklaverei', 'en' => 'Abolition of Slavery Day']],
             'tipping' => [
                 'restaurants' => ['from' => 5, 'to' => 10, 'unit' => 'percent', 'description' => ['de' => 'Service ist meist enthalten.']],
@@ -98,6 +100,7 @@ it('speichert Gebietstyp, Fahrseite und Reiseinformationen in mehreren Sprachen'
                 // Fester Wert: "bis" faellt weg.
                 'taxi' => ['mode' => 'fixed', 'from' => 2, 'unit' => 'amount', 'currency' => 'USD'],
             ],
+            'currency_notes' => ['de' => 'US-Dollar werden fast überall akzeptiert.'],
             'intro' => ['de' => 'Karibikinsel mit französischem Flair.', 'en' => 'Caribbean island with French flair.'],
             'known_for' => ['de' => ['Strände', 'Rum', 'Vulkan Pelée']],
             'power_notes' => ['de' => 'Teils 110 V in älteren Hotels.'],
@@ -105,7 +108,7 @@ it('speichert Gebietstyp, Fahrseite und Reiseinformationen in mehreren Sprachen'
             'description' => ['de' => "Martinique liegt in den Kleinen Antillen.\n\nDer Mont Pelée prägt den Norden."],
         ]);
 
-    // Ein souveraener Staat verliert sein Mutterland; ohne Angaben bleibt travel_info leer.
+    // Ohne Mutterland ist das Land ein souveraener Staat; ohne Angaben bleibt travel_info leer.
     Livewire::test(CountryEditor::class, ['country' => $martinique->id])
         ->assertSet('parentCountryId', (string) $france->id)
         ->assertSet('travelInfo.plug_types', ['C', 'E', 'F'])
@@ -126,11 +129,13 @@ it('speichert Gebietstyp, Fahrseite und Reiseinformationen in mehreren Sprachen'
         ->call('moveReligion', 'islam', 'down')
         ->assertSet('travelInfo.religions', ['christianity', 'none', 'islam'])
         ->assertSet('travelInfo.tipping.taxi.from', '2')
-        ->set('territoryType', 'sovereign')
+        ->assertSet('travelInfo.driving_permit', 'recommended')
+        ->set('parentCountryId', '')
         ->call('save')
         ->assertHasNoErrors();
 
-    expect($martinique->fresh()->parent_country_id)->toBeNull();
+    expect($martinique->fresh()->parent_country_id)->toBeNull()
+        ->and($martinique->fresh()->territory_type)->toBe('sovereign');
 
     $empty = travelCountry('Testland', 'XT', 'XTT');
     Livewire::test(CountryEditor::class, ['country' => $empty->id])->call('save')->assertHasNoErrors();
@@ -144,9 +149,9 @@ it('prueft Steckertypen, Strom, Notrufnummern und das Mutterland', function () {
     $this->actingAs(travelAdmin());
 
     Livewire::test(CountryEditor::class, ['country' => $country->id])
-        ->set('territoryType', 'dependent')
         ->set('parentCountryId', (string) $country->id)
         ->set('drivingSide', 'middle')
+        ->set('travelInfo.driving_permit', 'maybe')
         ->set('travelInfo.plug_types', ['Z'])
         ->set('travelInfo.religions', ['jediism'])
         ->set('travelInfo.national_day.date', '03.10.1990')
@@ -161,6 +166,7 @@ it('prueft Steckertypen, Strom, Notrufnummern und das Mutterland', function () {
         ->assertHasErrors([
             'parentCountryId',
             'drivingSide',
+            'travelInfo.driving_permit',
             'travelInfo.plug_types.0',
             'travelInfo.religions.0',
             'travelInfo.national_day.date',
@@ -322,12 +328,20 @@ it('bietet die KI-Pruefung fuer Reiseinformationen und Bilder an und uebernimmt 
 
     $apply = fn (string $key, string $value) => (fn () => $this->aiApply($key, $value))->call($editor->instance());
 
-    expect($apply('territory_type', 'Abhängiges Gebiet'))->toBeTrue()
-        ->and($editor->instance()->territoryType)->toBe('dependent')
+    expect($apply('territory_type', 'Abhängiges Gebiet'))->toBeFalse()
         ->and($apply('parent_country', 'Frankreich'))->toBeTrue()
         ->and($editor->instance()->parentCountryId)->toBe((string) $france->id)
         ->and($apply('driving_side', 'Rechtsverkehr'))->toBeTrue()
         ->and($editor->instance()->drivingSide)->toBe('right')
+        ->and($apply('driving_permit', 'Empfohlen, für Mietwagen oft verlangt'))->toBeTrue()
+        ->and($editor->instance()->travelInfo['driving_permit'])->toBe('recommended')
+        ->and($apply('driving_permit', 'Nicht erforderlich'))->toBeTrue()
+        ->and($editor->instance()->travelInfo['driving_permit'])->toBe('not_required')
+        ->and($apply('driving_permit', 'Nicht vorgeschrieben, aber empfohlen'))->toBeTrue()
+        ->and($editor->instance()->travelInfo['driving_permit'])->toBe('recommended')
+        ->and($apply('driving_permit', 'weiß nicht'))->toBeFalse()
+        ->and($apply('currency_notes_de', 'US-Dollar werden fast überall akzeptiert.'))->toBeTrue()
+        ->and($editor->instance()->travelInfo['texts']['currency_notes']['de'])->toBe('US-Dollar werden fast überall akzeptiert.')
         ->and($apply('plug_types', 'Typ C und Typ E'))->toBeTrue()
         ->and($editor->instance()->travelInfo['plug_types'])->toBe(['C', 'E'])
         ->and($apply('voltage', '220 V'))->toBeTrue()
@@ -358,10 +372,11 @@ it('bietet die KI-Pruefung fuer Reiseinformationen und Bilder an und uebernimmt 
         ->and($apply('intro_de', 'Karibikinsel.'))->toBeTrue()
         ->and($apply('unbekannt', 'x'))->toBeFalse();
 
-    expect(CountryTravelInfo::placeholders())->toHaveKeys(['territory_type', 'emergency_fire', 'religions', 'national_day_date', 'national_day_name_de', 'intro_de'])
+    expect(CountryTravelInfo::placeholders())->toHaveKeys(['currency_notes_de', 'parent_country', 'driving_permit', 'emergency_fire', 'religions', 'national_day_date', 'national_day_name_de', 'intro_de'])
+        ->and(CountryTravelInfo::placeholders())->not->toHaveKey('territory_type')
         ->and(CountryTravelInfo::placeholders())->not->toHaveKey('plug_types')
         ->and(CountryTravelInfo::placeholders())->not->toHaveKey('timezones')
-        ->and(\App\Support\AdminV2\AiAreas::placeholders('countries', 'details'))->toHaveKeys(['timezone', 'territory_type', 'emergency_police', 'intro_de'])
+        ->and(\App\Support\AdminV2\AiAreas::placeholders('countries', 'details'))->toHaveKeys(['timezone', 'currency_notes_de', 'driving_permit', 'emergency_police', 'intro_de'])
         ->and(CountryTravelInfo::powerPlaceholders())->toHaveKeys(['plug_types', 'voltage', 'frequency', 'power_notes_de', 'power_notes_en'])
         ->and(CountryTravelInfo::descriptionPlaceholders())->toHaveKeys(['short_description_de', 'description_de', 'description_nl'])
         ->and(CountryTravelInfo::rules()['travelInfo.texts.description.*'])->toContain('max:20000')

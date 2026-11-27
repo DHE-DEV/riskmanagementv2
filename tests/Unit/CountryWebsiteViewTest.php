@@ -24,10 +24,10 @@ it('renders every tab with the api data', function () {
         'c' => [
             'iso_code' => 'ES', 'name' => 'Spanien', 'continent' => ['code' => 'EU', 'name' => 'Europa'],
             'membership' => ['eu' => true, 'schengen' => true],
-            'currency' => ['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€'],
+            'currency' => ['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'notes' => 'Kartenzahlung fast überall möglich.'],
             'capital' => ['id' => 1, 'name' => 'Madrid', 'lat' => 40.4, 'lng' => -3.7],
             'description' => ['short' => 'Kurz', 'long' => 'Lang', 'known_for' => ['Tapas']],
-            'travel_info' => ['emergency' => ['general' => '112'], 'driving_side_label' => 'Rechtsverkehr', 'religions' => []],
+            'travel_info' => ['emergency' => ['general' => '112'], 'driving_side_label' => 'Rechtsverkehr', 'international_driving_permit_label' => 'Nicht erforderlich', 'religions' => []],
             'power' => ['voltage' => 230, 'frequency' => 50, 'plug_types' => [['type' => 'F', 'description' => 'Schuko', 'image' => '/f.svg']]],
             'tipping' => ['taxi' => ['from' => 0, 'to' => 5, 'unit' => 'percent', 'description' => 'Aufrunden']],
             'holidays' => ['year' => 2026, 'items' => [['date' => '2026-12-25', 'weekday' => 5, 'name' => 'Weihnachten', 'is_national' => true]]],
@@ -35,7 +35,7 @@ it('renders every tab with the api data', function () {
             'mobile_operators' => [['name' => 'Movistar', 'offers_esim' => true]],
             'images' => ['hero_url' => null, 'gallery' => []],
             'risk_profile' => ['overall' => ['level' => 2, 'label' => 'Gering'], 'categories' => [
-                'entry' => ['label' => 'Einreise', 'fields' => ['visa' => ['name' => 'Visum nötig', 'type' => 'bool', 'value' => false, 'note' => 'Für EU-Bürger nicht.']]],
+                'customs' => ['label' => 'Einfuhrbestimmungen', 'fields' => ['cash_declaration_limit' => ['name' => 'Bargeld-Anmeldung ab', 'type' => 'text', 'value' => '10.000 EUR', 'note' => 'Bei Einreise aus Nicht-EU-Ländern.']]],
             ]],
         ],
         'regions' => [['id' => 1, 'name' => 'Andalusien', 'is_popular' => true, 'cities_count' => 3]],
@@ -50,7 +50,7 @@ it('renders every tab with the api data', function () {
         ->toContain('Spanien')->toContain('Tapas')->toContain('Madrid')->toContain('Weihnachten')
         ->toContain('Andalusien')->toContain('Costa del Sol')->toContain('Sevilla')->toContain('Alhambra')
         ->toContain('Iberia')->toContain('Movistar')->toContain('112')->toContain('0–5 %')
-        ->toContain('Für EU-Bürger nicht.')->toContain('Risiko: Gering')
+        ->toContain('Bei Einreise aus Nicht-EU-Ländern.')->toContain('Einfuhrbestimmungen')->toContain('Internationaler Führerschein: Nicht erforderlich')->toContain('Kartenzahlung fast überall möglich.')->toContain('Risiko: Gering')
         ->toContain('Aktuelle Wetterdaten sind gerade nicht verfügbar.')
         ->toContain('data-panel="health"');
 });

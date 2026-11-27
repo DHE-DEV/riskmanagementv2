@@ -109,8 +109,6 @@ class Editor extends Component
     public string $apiPreviewYear = '';
 
     // Reiseinformationen (siehe CountryTravelInfo)
-    public string $territoryType = 'sovereign';
-
     public string $parentCountryId = '';
 
     public string $drivingSide = '';
@@ -192,7 +190,6 @@ class Editor extends Component
         $this->population = (string) $record->population;
         $this->areaKm2 = $record->area_km2 === null ? '' : rtrim(rtrim(number_format((float) $record->area_km2, 2, '.', ''), '0'), '.');
         $this->riskProfile = CountryRiskProfile::toForm($record->risk_profile);
-        $this->territoryType = isset(CountryTravelInfo::TERRITORY_TYPES[$record->territory_type]) ? $record->territory_type : 'sovereign';
         $this->parentCountryId = (string) ($record->parent_country_id ?? '');
         $this->drivingSide = (string) ($record->driving_side ?? '');
         $this->travelInfo = CountryTravelInfo::toForm($record->travel_info);
@@ -202,6 +199,54 @@ class Editor extends Component
         $this->fillHolidayRows();
         $this->fillImageMeta();
         $this->fillCoordinates($record);
+        $this->useCapitalCoordinates();
+    }
+
+    /**
+     * Hauptstadt des Landes (siehe Country::capital) – oben in den
+     * Informationen angezeigt und Quelle der Koordinaten.
+     */
+    #[Computed]
+    public function capitalCity(): ?City
+    {
+        return $this->record?->capital;
+    }
+
+    /**
+     * Alle als Hauptstadt markierten Staedte, wenn es mehr als eine ist – ein
+     * Hinweis auf Altdaten, die bereinigt werden sollten.
+     *
+     * @return Collection<int, City>
+     */
+    #[Computed]
+    public function extraCapitals(): Collection
+    {
+        $capitals = $this->record?->capitals()->get() ?? collect();
+
+        return $capitals->count() > 1 ? $capitals : collect();
+    }
+
+    /**
+     * Koordinaten der Hauptstadt, wenn sie verwendbar sind (siehe Country::capitalCoordinates).
+     *
+     * @return array{0: float, 1: float}|null
+     */
+    #[Computed]
+    public function capitalCoordinates(): ?array
+    {
+        return $this->record?->capitalCoordinates();
+    }
+
+    /**
+     * Setzt den Punkt des Landes auf die Hauptstadt – wie bei landesweiten
+     * Ereignissen. Ohne verwendbare Hauptstadt bleiben die eigenen Koordinaten.
+     */
+    protected function useCapitalCoordinates(): void
+    {
+        if ($coordinates = $this->capitalCoordinates) {
+            $this->lat = \App\Support\AdminV2\Coordinates::format($coordinates[0]);
+            $this->lng = \App\Support\AdminV2\Coordinates::format($coordinates[1]);
+        }
     }
 
     /**
@@ -1045,6 +1090,22 @@ class Editor extends Component
         return array_filter($rows, fn (string $value) => $value !== '');
     }
 
+    /**
+     * Gebietstyp ohne eigenes Feld: mit Mutterland ein abhaengiges Gebiet,
+     * sonst ein souveraener Staat. Umstrittene Gebiete und Sonderfaelle
+     * behalten ihren gespeicherten Typ.
+     */
+    protected function territoryTypeFor(Country $record): string
+    {
+        $stored = $record->territory_type;
+
+        if (in_array($stored, ['disputed', 'special'], true)) {
+            return $stored;
+        }
+
+        return $this->parentCountryId !== '' ? 'dependent' : 'sovereign';
+    }
+
     public function save(bool $another = false): void
     {
         $this->isoCode = mb_strtoupper(trim($this->isoCode));
@@ -1057,6 +1118,7 @@ class Editor extends Component
             fn (array $row) => $row['code'] !== '' || $row['name'] !== '',
         ));
         $this->normalizeCoordinates();
+        $this->useCapitalCoordinates();
 
         // Unveraenderte Codes werden nicht erneut auf Eindeutigkeit geprueft.
         $record = $this->record;
@@ -1081,8 +1143,6 @@ class Editor extends Component
             'languages.*' => ['string', 'regex:/^[a-z]{2,3}$/'],
             'population' => ['nullable', 'integer', 'min:0', 'max:4294967295'],
             'areaKm2' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
-            'riskProfile.entry.passport_validity_months' => ['nullable', 'integer', 'min:0', 'max:120'],
-            'territoryType' => ['required', Rule::in(array_keys(CountryTravelInfo::TERRITORY_TYPES))],
             'parentCountryId' => ['nullable', Rule::exists('countries', 'id')->whereNull('deleted_at'), Rule::notIn([(string) $this->recordId])],
             'drivingSide' => ['nullable', Rule::in(array_keys(CountryTravelInfo::DRIVING_SIDES))],
             'taxiAppIds' => ['array'],
@@ -1114,8 +1174,6 @@ class Editor extends Component
             'languages.*.regex' => 'Sprachen werden als ISO-Code mit 2–3 Buchstaben gespeichert, z. B. es.',
             'population.integer' => 'Die Bevölkerung muss eine ganze Zahl sein.',
             'areaKm2.numeric' => 'Die Fläche muss eine Zahl sein.',
-            'riskProfile.entry.passport_validity_months.integer' => 'Die Gültigkeit des Reisepasses ist eine ganze Zahl von Monaten.',
-            'territoryType.in' => 'Bitte einen Gebietstyp wählen.',
             'parentCountryId.exists' => 'Bitte ein vorhandenes Land als Mutterland wählen.',
             'parentCountryId.not_in' => 'Ein Land kann nicht sein eigenes Mutterland sein.',
             'drivingSide.in' => 'Bitte Rechts- oder Linksverkehr wählen.',
@@ -1152,9 +1210,8 @@ class Editor extends Component
             'population' => $this->population === '' ? null : (int) $this->population,
             'area_km2' => $this->areaKm2 === '' ? null : (float) $this->areaKm2,
             'risk_profile' => $riskProfile,
-            'territory_type' => $this->territoryType,
-            // Ein souveraener Staat hat kein Mutterland.
-            'parent_country_id' => $this->territoryType !== 'sovereign' && $this->parentCountryId !== '' ? (int) $this->parentCountryId : null,
+            'territory_type' => $this->territoryTypeFor($record),
+            'parent_country_id' => $this->parentCountryId !== '' ? (int) $this->parentCountryId : null,
             'driving_side' => $this->drivingSide ?: null,
             'travel_info' => $travelInfo,
         ] + $this->coordinateValues())->save();
@@ -1174,7 +1231,7 @@ class Editor extends Component
             MasterData::logChange($record, \App\Models\MasterDataChange::ACTION_UPDATED, ['mobile_operators']);
         }
 
-        unset($this->related, $this->boundary, $this->overallRisk, $this->taxiAppOptions, $this->selectedTaxiApps, $this->selectedMobileOperators, $this->mobileOperatorMatches);
+        unset($this->related, $this->boundary, $this->capitalCity, $this->extraCapitals, $this->capitalCoordinates, $this->overallRisk, $this->taxiAppOptions, $this->selectedTaxiApps, $this->selectedMobileOperators, $this->mobileOperatorMatches);
 
         $this->markAiResearchSaved();
 
@@ -1311,7 +1368,7 @@ class Editor extends Component
                 break;
 
             case 'details':
-                foreach (array_keys(CountryTravelInfo::TEXTS) as $field) {
+                foreach (array_keys(CountryTravelInfo::CURRENCY_TEXTS + CountryTravelInfo::TEXTS) as $field) {
                     $this->travelInfo['texts'][$field] = $this->translateMap((array) ($this->travelInfo['texts'][$field] ?? []), $deepl, $translated, $errors);
                 }
                 $this->travelInfo['national_day']['name'] = $this->translateMap((array) ($this->travelInfo['national_day']['name'] ?? []), $deepl, $translated, $errors);
@@ -1546,9 +1603,9 @@ class Editor extends Component
         }
 
         $travel = [
-            'territory_type' => CountryTravelInfo::TERRITORY_TYPES[$this->territoryType] ?? $this->territoryType,
             'parent_country' => collect($this->parentOptions)->firstWhere('value', (int) $this->parentCountryId)['label'] ?? null,
             'driving_side' => CountryTravelInfo::DRIVING_SIDES[$this->drivingSide] ?? null,
+            'driving_permit' => CountryTravelInfo::DRIVING_PERMITS[$this->travelInfo['driving_permit'] ?? ''] ?? null,
             'plug_types' => implode(', ', (array) ($this->travelInfo['plug_types'] ?? [])) ?: null,
             'voltage' => $this->travelInfo['voltage'] ?: null,
             'frequency' => $this->travelInfo['frequency'] ?: null,
@@ -1874,13 +1931,13 @@ class Editor extends Component
         }
 
         switch ($key) {
-            case 'territory_type':
-                $type = CountryTravelInfo::parseOption(CountryTravelInfo::TERRITORY_TYPES, $value);
-                if ($type) {
-                    $this->territoryType = $type;
+            case 'driving_permit':
+                $permit = CountryTravelInfo::parseDrivingPermit($value);
+                if ($permit) {
+                    $this->travelInfo['driving_permit'] = $permit;
                 }
 
-                return $type !== null;
+                return $permit !== null;
             case 'parent_country':
                 $option = $this->aiMatch($this->parentOptions, $value, fn (array $option) => $option['label'])
                     ?? $this->aiMatch($this->parentOptions, $value, fn (array $option) => $option['code']);

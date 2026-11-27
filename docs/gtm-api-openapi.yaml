@@ -1890,6 +1890,7 @@ components:
             code: {type: string, example: EUR}
             name: {type: string, nullable: true}
             symbol: {type: string, nullable: true}
+            notes: {$ref: '#/components/schemas/TranslatedText'}
         phone_prefix: {type: string, nullable: true, example: "+49"}
         timezone: {type: string, nullable: true, example: Europe/Berlin}
         languages:
@@ -1936,6 +1937,8 @@ components:
             intro: {$ref: '#/components/schemas/TranslatedText'}
             driving_side: {type: string, enum: [right, left], nullable: true}
             driving_side_label: {type: string, nullable: true}
+            international_driving_permit: {type: string, enum: [not_required, recommended, required], nullable: true}
+            international_driving_permit_label: {type: string, nullable: true}
             emergency:
               type: object
               properties:
@@ -2072,7 +2075,7 @@ components:
                 label: {type: string, nullable: true}
             categories:
               type: object
-              description: "security, health, natural_hazards, infrastructure, entry, climate, culture_law"
+              description: "security, health, natural_hazards, infrastructure, customs, climate, culture_law"
               additionalProperties:
                 type: object
                 properties:

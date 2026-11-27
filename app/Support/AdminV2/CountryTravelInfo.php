@@ -17,7 +17,8 @@ use App\Models\CustomEvent;
  *   national_day: {date: "1990-10-03", name: {de: "Tag der Deutschen Einheit", en: "German Unity Day"}},
  *   tipping: {restaurants: {mode: "range", from: 5, to: 10, unit: "percent", currency: "EUR", description: {de: "…"}}, …}
  *   (mode "fixed": nur "from" als fester Wert),
- *   intro: {de: "…", en: "…"}, known_for: {de: ["…"], en: ["…"]}
+ *   driving_permit: "recommended" (internationaler Fuehrerschein, siehe DRIVING_PERMITS),
+ *   intro: {de: "…", en: "…"}, currency_notes: {de: "…"}, known_for: {de: ["…"], en: ["…"]}
  */
 class CountryTravelInfo
 {
@@ -31,6 +32,13 @@ class CountryTravelInfo
     public const DRIVING_SIDES = [
         'right' => 'Rechtsverkehr',
         'left' => 'Linksverkehr',
+    ];
+
+    /** Internationaler Fuehrerschein: Angabe => Bezeichnung */
+    public const DRIVING_PERMITS = [
+        'not_required' => 'Nicht erforderlich',
+        'recommended' => 'Empfohlen',
+        'required' => 'Erforderlich',
     ];
 
     /** Steckertypen nach IEC – Buchstabe => Beschreibung */
@@ -102,6 +110,11 @@ class CountryTravelInfo
         'intro' => ['Einleitung', 'textarea'],
     ];
 
+    /** Mehrsprachige Texte zur Waehrung, z. B. "US-Dollar werden fast überall akzeptiert." */
+    public const CURRENCY_TEXTS = [
+        'currency_notes' => ['Hinweise zur Währung', 'textarea'],
+    ];
+
     /** Mehrsprachige Texte des Abschnitts "Strom" */
     public const POWER_TEXTS = [
         'power_notes' => ['Bemerkung zum Strom', 'textarea'],
@@ -127,7 +140,7 @@ class CountryTravelInfo
      */
     public static function allTexts(): array
     {
-        return self::DESCRIPTION_TEXTS + self::TEXTS + self::POWER_TEXTS;
+        return self::DESCRIPTION_TEXTS + self::CURRENCY_TEXTS + self::TEXTS + self::POWER_TEXTS;
     }
 
     /**
@@ -187,6 +200,7 @@ class CountryTravelInfo
             'frequency' => isset($info['frequency']) ? (string) $info['frequency'] : '',
             'emergency' => [],
             'religions' => self::religionKeys((array) ($info['religions'] ?? [])),
+            'driving_permit' => isset(self::DRIVING_PERMITS[$info['driving_permit'] ?? '']) ? $info['driving_permit'] : '',
             'national_day' => ['date' => (string) ($info['national_day']['date'] ?? ''), 'name' => []],
             'tipping' => [],
             'texts' => [],
@@ -267,6 +281,9 @@ class CountryTravelInfo
         }
         self::put($nationalDay, 'name', $names);
         self::put($info, 'national_day', $nationalDay);
+
+        $permit = (string) ($form['driving_permit'] ?? '');
+        self::put($info, 'driving_permit', isset(self::DRIVING_PERMITS[$permit]) ? $permit : null);
 
         // Religionen in der Reihenfolge des Anklickens – sie bestimmt die Reihenfolge in Apps und Feeds.
         self::put($info, 'religions', self::religionKeys((array) ($form['religions'] ?? [])));
@@ -377,6 +394,7 @@ class CountryTravelInfo
             $prefix.'.national_day.name.*' => ['nullable', 'string', 'max:255'],
             $prefix.'.religions' => ['array'],
             $prefix.'.religions.*' => ['string', 'in:'.implode(',', array_keys(self::RELIGIONS))],
+            $prefix.'.driving_permit' => ['nullable', 'in:'.implode(',', array_keys(self::DRIVING_PERMITS))],
         ];
 
         foreach (self::TIPPING_CATEGORIES as $category => $label) {
@@ -417,6 +435,7 @@ class CountryTravelInfo
         $messages = [
             $prefix.'.plug_types.*.in' => 'Unbekannter Steckertyp.',
             $prefix.'.religions.*.in' => 'Unbekannte Religion.',
+            $prefix.'.driving_permit.in' => 'Bitte angeben, ob ein internationaler Führerschein nötig ist.',
             $prefix.'.national_day.date.date_format' => 'Der Nationaltag ist ein Datum (TT.MM.JJJJ).',
             $prefix.'.voltage.integer' => 'Die Netzspannung ist eine ganze Zahl in Volt.',
             $prefix.'.voltage.between' => 'Die Netzspannung liegt zwischen 100 und 250 Volt.',
@@ -507,10 +526,18 @@ class CountryTravelInfo
      */
     public static function placeholders(): array
     {
-        $placeholders = [
-            'territory_type' => 'Gebietstyp',
+        $placeholders = [];
+
+        foreach (self::CURRENCY_TEXTS as $field => [$label]) {
+            foreach (self::locales() as $locale) {
+                $placeholders[$field.'_'.$locale] = $label.' ('.strtoupper($locale).')';
+            }
+        }
+
+        $placeholders += [
             'parent_country' => 'Mutterland',
             'driving_side' => 'Fahrseite',
+            'driving_permit' => 'Internationaler Führerschein',
         ];
 
         foreach (self::EMERGENCY as $key => $label) {
@@ -537,8 +564,10 @@ class CountryTravelInfo
      */
     public static function reviewHint(): string
     {
-        return 'Gebietstyp: '.implode(', ', self::TERRITORY_TYPES).'. Fahrseite: '.implode(', ', self::DRIVING_SIDES)
-            .'. Notrufnummern als Ziffern. Zeitzone als IANA-Name (z. B. Europe/Berlin), mehrere mit Komma.'
+        return 'Mutterland nur bei abhängigen Gebieten (z. B. Frankreich für Martinique), sonst leer. Fahrseite: '.implode(', ', self::DRIVING_SIDES)
+            .'. Internationaler Führerschein: '.implode(', ', self::DRIVING_PERMITS).' – ob Reisende mit deutschem Führerschein zusätzlich einen internationalen brauchen.'
+            .' Hinweise zur Währung: was Reisende beim Bezahlen wissen sollten, z. B. akzeptierte Fremdwährungen, Bargeld oder Karte.'
+            .' Notrufnummern als Ziffern. Zeitzone als IANA-Name (z. B. Europe/Berlin), mehrere mit Komma.'
             .' Religionen: die im Land verbreiteten aus '.implode(', ', array_map(fn (array $labels) => $labels[0], self::RELIGIONS)).', mehrere mit Komma, die verbreitetste zuerst.'
             .' Nationaltag als Datum JJJJ-MM-TT (Jahr = Ursprungsjahr, falls bekannt) und Bezeichnung je Sprache.'
             .' „Bekannt für“: 3–6 Stichworte, mit Komma getrennt. Texte in der jeweils angegebenen Sprache.';
@@ -633,6 +662,23 @@ class CountryTravelInfo
      *
      * @param  array<string, string>  $options
      */
+    /**
+     * Antwort der KI zum internationalen Fuehrerschein -> Schluessel aus
+     * DRIVING_PERMITS; null, wenn sie keine klare Aussage trifft.
+     */
+    public static function parseDrivingPermit(string $value): ?string
+    {
+        $text = mb_strtolower(trim($value));
+
+        return match (true) {
+            // "Nicht vorgeschrieben, aber empfohlen" ist eine Empfehlung.
+            (bool) preg_match('/\b(empfohlen|empfehlenswert|recommended)/u', $text) => 'recommended',
+            (bool) preg_match('/\b(nicht (erforderlich|nötig|notwendig|vorgeschrieben)|kein(e|en)? (internationaler )?führerschein|not required)\b/u', $text) => 'not_required',
+            (bool) preg_match('/\b(erforderlich|pflicht|vorgeschrieben|required)\b/u', $text) => 'required',
+            default => null,
+        };
+    }
+
     public static function parseOption(array $options, string $value): ?string
     {
         $needle = mb_strtolower(trim($value));

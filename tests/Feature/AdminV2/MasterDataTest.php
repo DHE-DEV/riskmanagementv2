@@ -401,7 +401,7 @@ it('legt ein Land mit weiteren Sprachen, Zahlen in deutscher Schreibweise und Ri
         ->set('riskProfile.health.health_risk_level', '1')
         ->set('riskProfile.health.drinking_water_safe', true)
         ->set('riskProfile.health.recommended_vaccinations', 'Hepatitis A, FSME, ')
-        ->set('riskProfile.entry.passport_validity_months', '6')
+        ->set('riskProfile.customs.cash_declaration_limit', ' 10.000 EUR ')
         ->set('riskProfile.climate.climate_zone', 'gemäßigt')
         ->call('save')
         ->assertHasNoErrors();
@@ -418,7 +418,7 @@ it('legt ein Land mit weiteren Sprachen, Zahlen in deutscher Schreibweise und Ri
         ->and((float) $germany->lat)->toBe(51.1657)
         ->and($germany->overall_risk_level)->toBe(2)
         ->and($germany->risk_profile['health'])->toEqual(['health_risk_level' => 1, 'malaria_risk' => false, 'drinking_water_safe' => true, 'required_vaccinations' => [], 'recommended_vaccinations' => ['Hepatitis A', 'FSME']])
-        ->and($germany->risk_profile['entry']['passport_validity_months'])->toBe(6)
+        ->and($germany->risk_profile['customs']['cash_declaration_limit'])->toBe('10.000 EUR')
         ->and($germany->risk_profile['climate']['climate_zone'])->toBe('gemäßigt')
         ->and($germany->risk_profile)->not->toHaveKey('infrastructure');
 });
@@ -615,7 +615,8 @@ it('fuehrt eine KI-Pruefung mit den Daten des Abschnitts aus und zeigt Verbrauch
     // Die Daten des Abschnitts – und nur die – gehen mit.
     // Seit dem Zusammenlegen mit den Reiseinformationen gehoeren auch Gebiet, Notruf und Texte dazu.
     expect(array_slice(array_keys($component->get('aiData')), 0, 8))->toBe(['currency_code', 'currency_name', 'currency_symbol', 'phone_prefix', 'timezone', 'languages', 'population', 'area_km2'])
-        ->and(array_keys($component->get('aiData')))->toContain('territory_type', 'emergency_police', 'intro_de')
+        ->and(array_keys($component->get('aiData')))->toContain('currency_notes_de', 'driving_permit', 'emergency_police', 'intro_de')
+        ->and(array_keys($component->get('aiData')))->not->toContain('territory_type')
         ->and(array_keys($component->get('aiData')))->not->toContain('name', 'plug_types', 'lat')
         ->and($component->get('aiData')['currency_code']['value'])->toBe('EUR')
         ->and($component->get('aiData')['currency_name']['value'])->toBe('–');
@@ -1324,7 +1325,7 @@ it('prueft das Risikoprofil je Bereich Feld fuer Feld und uebernimmt Stufen, Sch
                 'risk_security_crime_level' => ['status' => 'change', 'value' => 'Hoch'],
                 'risk_health_malaria_risk' => ['status' => 'change', 'value' => 'Ja', 'note' => 'In Teilen des Landes.'],
                 'risk_health_required_vaccinations' => ['status' => 'change', 'value' => 'Gelbfieber, Polio'],
-                'risk_entry_passport_validity_months' => ['status' => 'change', 'value' => '6 Monate'],
+                'risk_customs_cash_declaration_limit' => ['status' => 'change', 'value' => '10.000 EUR'],
                 'risk_climate_climate_zone' => ['status' => 'ok'],
                 'risk_natural_hazards_flood_risk' => ['status' => 'change', 'value' => 'extrem'],
             ],
@@ -1380,13 +1381,13 @@ it('prueft das Risikoprofil je Bereich Feld fuer Feld und uebernimmt Stufen, Sch
     // Stufen, Zahlen und ungueltige Werte in den anderen Bereichen.
     $component = Livewire::test(CountryEditor::class, ['country' => $country->id]);
 
-    foreach (['risk_security', 'risk_entry', 'risk_natural_hazards'] as $section) {
+    foreach (['risk_security', 'risk_customs', 'risk_natural_hazards'] as $section) {
         $component->call('openAiCheck', $section)->set('aiCheckId', 'review')->call('reviewAiFields')->assertSet('aiError', null)->call('applyAllAiSuggestions');
     }
 
     $component->assertSet('riskProfile.security.overall_risk_level', '3')
         ->assertSet('riskProfile.security.crime_level', '4')
-        ->assertSet('riskProfile.entry.passport_validity_months', '6')
+        ->assertSet('riskProfile.customs.cash_declaration_limit', '10.000 EUR')
         // "extrem" ist keine Stufe – bleibt offen.
         ->assertSet('riskProfile.natural_hazards.flood_risk', '')
         ->assertSet('aiReview.fields.risk_natural_hazards_flood_risk.applied', null)
@@ -1396,4 +1397,20 @@ it('prueft das Risikoprofil je Bereich Feld fuer Feld und uebernimmt Stufen, Sch
     expect($country->fresh()->risk_profile['security']['crime_level'])->toBe(4)
         ->and($country->fresh()->risk_profile['health']['required_vaccinations'])->toBe(['Gelbfieber', 'Polio'])
         ->and($country->fresh()->overall_risk_level)->toBe(3);
+});
+
+it('fuehrt Einfuhrbestimmungen statt Einreise und behaelt alte Einreise-Angaben im Profil', function () {
+    $country = country('Testland', 'TL', continent('Europa', 'EU'), ['risk_profile' => ['entry' => ['visa_required' => true, 'passport_validity_months' => 6]]]);
+
+    Livewire::test(CountryEditor::class, ['country' => $country->id])
+        ->assertSee('Einfuhrbestimmungen')
+        ->assertSee('Einreise mit Haustieren')
+        ->assertDontSee('Reisepass-Gültigkeit')
+        ->set('riskProfile.customs.prohibited_items', 'Kaugummi in größeren Mengen.')
+        ->set('riskProfile.customs.notes.cash_declaration_limit.de', 'Gilt auch für Schecks.')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($country->fresh()->risk_profile['entry'])->toEqual(['visa_required' => true, 'passport_validity_months' => 6])
+        ->and($country->fresh()->risk_profile['customs'])->toEqual(['prohibited_items' => 'Kaugummi in größeren Mengen.', 'notes' => ['cash_declaration_limit' => ['de' => 'Gilt auch für Schecks.']]]);
 });

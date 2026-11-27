@@ -51,6 +51,8 @@ function apiCountry(): Country
             'description' => ['de' => "Absatz eins.\n\nAbsatz zwei."],
             'known_for' => ['de' => ['Rum', 'Strände'], 'en' => ['Rum', 'Beaches']],
             'intro' => ['de' => 'Karibik mit französischem Flair.'],
+            'currency_notes' => ['de' => 'Kartenzahlung fast überall möglich.'],
+            'driving_permit' => 'not_required',
             'emergency' => ['general' => '112', 'police' => '17'],
             'religions' => ['christianity'],
             'national_day' => ['date' => '1789-07-14', 'name' => ['de' => 'Nationalfeiertag', 'en' => 'Bastille Day']],
@@ -103,7 +105,9 @@ it('liefert alle Angaben eines Landes strukturiert als JSON', function () {
         ->and($data['territory']['parent_country']['iso_code'])->toBe('FR')
         ->and($data['membership'])->toBe(['eu' => true, 'schengen' => false])
         ->and($data['currency']['code'])->toBe('EUR')
-        ->and($data['coordinates'])->toBe(['lat' => 14.6415, 'lng' => -61.0242])
+        ->and($data['currency']['notes'])->toBe(['de' => 'Kartenzahlung fast überall möglich.'])
+        // Der Punkt des Landes liegt auf der Hauptstadt.
+        ->and($data['coordinates'])->toBe(['lat' => 14.6037, 'lng' => -61.0732])
         ->and($data['capital'])->toBe(['id' => City::where('is_capital', true)->value('id'), 'name' => ['de' => 'Fort-de-France', 'en' => 'Fort-de-France'], 'lat' => 14.6037, 'lng' => -61.0732])
         ->and($data['flag']['svg_url'])->toContain('mq.svg')
         ->and($data['description']['short'])->toBe(['de' => 'Die Blumeninsel.', 'en' => 'The island of flowers.'])
@@ -113,6 +117,8 @@ it('liefert alle Angaben eines Landes strukturiert als JSON', function () {
         ->and($data['travel_info']['religions'][0]['key'])->toBe('christianity')
         ->and($data['travel_info']['national_day']['day_month'])->toBe('07-14')
         ->and($data['travel_info']['driving_side_label'])->toBe('Rechtsverkehr')
+        ->and($data['travel_info']['international_driving_permit'])->toBe('not_required')
+        ->and($data['travel_info']['international_driving_permit_label'])->toBe('Nicht erforderlich')
         ->and($data['power']['voltage'])->toBe(220)
         ->and(array_column($data['power']['plug_types'], 'type'))->toBe(['C', 'E'])
         ->and($data['power']['plug_types'][0]['image'])->toContain('plug-types/c.svg')

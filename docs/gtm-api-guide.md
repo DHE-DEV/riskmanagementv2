@@ -565,7 +565,7 @@ curl -H "Authorization: Bearer {TOKEN}" \
     "continent": {"code": "EU", "name": {"de": "Europa", "en": "Europe"}},
     "territory": {"type": "sovereign", "type_label": "Souveräner Staat", "parent_country": null},
     "membership": {"eu": true, "schengen": true},
-    "currency": {"code": "EUR", "name": "Euro", "symbol": "€"},
+    "currency": {"code": "EUR", "name": "Euro", "symbol": "€", "notes": {"de": "Kartenzahlung ist fast überall möglich."}},
     "phone_prefix": "+49",
     "timezone": "Europe/Berlin",
     "languages": ["de"],
@@ -583,6 +583,8 @@ curl -H "Authorization: Bearer {TOKEN}" \
       "intro": {"de": "…"},
       "driving_side": "right",
       "driving_side_label": "Rechtsverkehr",
+      "international_driving_permit": "not_required",
+      "international_driving_permit_label": "Nicht erforderlich",
       "emergency": {"general": "112", "police": "110", "ambulance": "112", "fire": "112"},
       "religions": [{"key": "christianity", "name": {"de": "Christentum", "en": "Christianity"}}],
       "national_day": {"date": "1990-10-03", "day_month": "10-03", "name": {"de": "Tag der Deutschen Einheit"}}
@@ -1424,15 +1426,15 @@ curl -H "Authorization: Bearer {TOKEN}" \
 | `continent` | object / null | `code`, `name` (Text) |
 | `territory` | object | `type` (`sovereign`, `dependent`, `disputed`, `special`), `type_label`, `parent_country` (`iso_code`, `name`) |
 | `membership` | object | `eu`, `schengen` (boolean) |
-| `currency` | object / null | `code`, `name`, `symbol` |
+| `currency` | object / null | `code`, `name`, `symbol`, `notes` (Text, Hinweise für Reisende, z. B. akzeptierte Fremdwährungen) |
 | `phone_prefix`, `timezone` | string / null | Vorwahl, IANA-Zeitzone |
 | `languages` | string[] | Sprachcodes |
 | `population`, `area_km2` | number / null | Einwohner, Fläche |
-| `coordinates` | object / null | `lat`, `lng` (Mittelpunkt) |
+| `coordinates` | object / null | `lat`, `lng` – Punkt des Landes auf der Karte, in der Regel die Hauptstadt |
 | `capital` | object / null | `id` (Stadt-ID wie in `/v1/countries/{code}/cities`), `name` (Text), `lat`, `lng` der Hauptstadt |
 | `flag` | object | `svg_url`, `emoji` |
 | `description` | object | `short` (Text), `long` (Text, Absätze durch Leerzeilen), `known_for` (Liste je Sprache) |
-| `travel_info` | object | `intro` (Text), `driving_side` (`right`/`left`), `emergency` (`general`, `police`, `ambulance`, `fire`), `religions[]` (`key`, `name`), `national_day` (`date`, `day_month`, `name`) |
+| `travel_info` | object | `intro` (Text), `driving_side` (`right`/`left`), `international_driving_permit` (`not_required`, `recommended`, `required` oder `null`) mit `international_driving_permit_label`, `emergency` (`general`, `police`, `ambulance`, `fire`), `religions[]` (`key`, `name`), `national_day` (`date`, `day_month`, `name`) |
 | `power` | object | `voltage`, `frequency`, `plug_types[]` (`type`, `description`, `image` als SVG, `image_png`), `notes` (Text) |
 | `tipping` | object | je `hotels`, `guides`, `restaurants`, `taxi`: `mode`, `from`, `to`, `unit`, `currency`, `description` oder `null` |
 | `airlines[]` | object | Aktive Fluggesellschaften mit Sitz im Land, nach Name sortiert: `name`, `iata_code`, `icao_code`, `headquarters`, `website_url`, `booking_url` |

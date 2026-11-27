@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Country extends Model
 {
@@ -197,11 +197,93 @@ class Country extends Model
     }
 
     /**
-     * Get the capital city for this country.
+     * Hauptstadt des Landes. Aus Altdaten sind manchmal mehrere Staedte als
+     * Hauptstadt markiert, teils sogar Staedte eines anderen Landes – Vorrang
+     * hat die Stadt mit Region, die zugleich Regionshauptstadt ist, dann die
+     * zuerst angelegte. So ist das Ergebnis immer dasselbe.
      */
-    public function capital()
+    public function capital(): HasOne
     {
-        return $this->hasOne(City::class)->where('is_capital', true);
+        return $this->hasOne(City::class)
+            ->where('is_capital', true)
+            ->orderByRaw('region_id is null')
+            ->orderByDesc('is_regional_capital')
+            ->orderBy('id');
+    }
+
+    /**
+     * Alle als Hauptstadt markierten Staedte, in derselben Reihenfolge wie
+     * {@see capital()} – mehr als eine deutet auf Altdaten hin.
+     */
+    public function capitals(): HasMany
+    {
+        return $this->hasMany(City::class)
+            ->where('is_capital', true)
+            ->orderByRaw('region_id is null')
+            ->orderByDesc('is_regional_capital')
+            ->orderBy('id');
+    }
+
+    /**
+     * Ob ein Punkt innerhalb der Landesgrenze liegt (Rechteck um die Grenze mit
+     * etwas Spielraum). Ohne hinterlegte Grenze gilt jeder Punkt als passend.
+     */
+    public function containsPoint(float $lat, float $lng): bool
+    {
+        $boundary = $this->boundary;
+
+        if (! $boundary || $boundary->min_lat === null || $boundary->min_lng === null) {
+            return true;
+        }
+
+        $margin = 0.3;
+
+        return $lat >= $boundary->min_lat - $margin && $lat <= $boundary->max_lat + $margin
+            && $lng >= $boundary->min_lng - $margin && $lng <= $boundary->max_lng + $margin;
+    }
+
+    /**
+     * Koordinaten der Hauptstadt – dorthin setzt die Karte das Land und seine
+     * landesweiten Ereignisse. null ohne Hauptstadt, ohne ihre Koordinaten oder
+     * wenn sie ausserhalb der Landesgrenze liegt (falsch zugeordnete Altdaten).
+     *
+     * @return array{0: float, 1: float}|null
+     */
+    public function capitalCoordinates(): ?array
+    {
+        $capital = $this->capital;
+
+        if (! $capital || $capital->lat === null || $capital->lng === null) {
+            return null;
+        }
+
+        $lat = (float) $capital->lat;
+        $lng = (float) $capital->lng;
+
+        return $this->containsPoint($lat, $lng) ? [$lat, $lng] : null;
+    }
+
+    /**
+     * Setzt die Koordinaten des Landes auf die seiner Hauptstadt. Ohne
+     * verwendbare Hauptstadt bleiben sie unveraendert.
+     */
+    public function syncCoordinatesFromCapital(): bool
+    {
+        $this->unsetRelation('capital');
+        $coordinates = $this->capitalCoordinates();
+
+        if ($coordinates === null) {
+            return false;
+        }
+
+        $this->lat = $coordinates[0];
+        $this->lng = $coordinates[1];
+
+        if (! $this->isDirty(['lat', 'lng'])) {
+            return false;
+        }
+
+        return $this->save();
     }
 
     /**
@@ -244,6 +326,7 @@ class Country extends Model
     public function getName(string $language = 'de'): string
     {
         $translations = $this->name_translations ?? [];
+
         return $translations[$language] ?? $translations['en'] ?? $this->iso_code ?? 'Unknown';
     }
 
@@ -262,7 +345,7 @@ class Country extends Model
     {
         return $query->where(function ($q) use ($search) {
             $q->where('iso_code', 'like', "%{$search}%")
-              ->orWhere('iso3_code', 'like', "%{$search}%");
+                ->orWhere('iso3_code', 'like', "%{$search}%");
         });
     }
 

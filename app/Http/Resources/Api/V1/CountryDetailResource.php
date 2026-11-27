@@ -60,6 +60,7 @@ class CountryDetailResource extends JsonResource
                 'code' => $country->currency_code,
                 'name' => $country->currency_name,
                 'symbol' => $country->currency_symbol,
+                'notes' => $this->text($info['currency_notes'] ?? null),
             ] : null,
             'phone_prefix' => $country->phone_prefix,
             'timezone' => $country->timezone,
@@ -89,6 +90,8 @@ class CountryDetailResource extends JsonResource
                 'intro' => $this->text($info['intro'] ?? null),
                 'driving_side' => $country->driving_side,
                 'driving_side_label' => CountryTravelInfo::DRIVING_SIDES[$country->driving_side] ?? null,
+                'international_driving_permit' => $info['driving_permit'] ?? null,
+                'international_driving_permit_label' => CountryTravelInfo::DRIVING_PERMITS[$info['driving_permit'] ?? ''] ?? null,
                 'emergency' => $this->emergency($info),
                 'religions' => $this->religions($info),
                 'national_day' => ($info['national_day']['date'] ?? null) ? [

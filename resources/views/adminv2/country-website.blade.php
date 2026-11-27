@@ -68,7 +68,7 @@
         'emergency' => ['Notfall', 'fa-triangle-exclamation'],
         'weather' => ['Wetter', 'fa-cloud-sun'],
         'esim' => ['eSIM', 'fa-sim-card'],
-        'visa' => ['Visa', 'fa-passport'],
+        'customs' => ['Einfuhr', 'fa-suitcase'],
         'health' => ['Gesundheit', 'fa-briefcase-medical'],
     ];
     // Zeitzone des Landes nur, wenn sie eine gueltige Kennung ist (manche Laender haben Freitext).
@@ -328,11 +328,14 @@
             @endif
             <div class="flex flex-col gap-6">
                 @php $infra = $riskEntries('infrastructure', ['infrastructure_level', 'road_safety', 'public_transport_quality']); @endphp
-                @if (! empty($c['travel_info']['driving_side_label']) || $infra)
+                @if (! empty($c['travel_info']['driving_side_label']) || ! empty($c['travel_info']['international_driving_permit_label']) || $infra)
                     <article class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-zinc-200/70 dark:bg-zinc-900 dark:ring-zinc-800">
                         <h2 class="mb-4 text-lg font-semibold text-zinc-900 dark:text-white"><i class="fa-solid fa-road me-2 text-zinc-400"></i>Straßenverkehr</h2>
                         @if (! empty($c['travel_info']['driving_side_label']))
                             <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-zinc-100 px-3 py-1.5 text-sm font-medium dark:bg-zinc-800"><i class="fa-solid fa-car-side {{ ($c['travel_info']['driving_side'] ?? '') === 'left' ? '-scale-x-100' : '' }}"></i>{{ $c['travel_info']['driving_side_label'] }}</div>
+                        @endif
+                        @if (! empty($c['travel_info']['international_driving_permit_label']))
+                            <div class="mb-3 ms-1 inline-flex items-center gap-2 rounded-full bg-zinc-100 px-3 py-1.5 text-sm font-medium dark:bg-zinc-800"><i class="fa-solid fa-id-card"></i>Internationaler Führerschein: {{ $c['travel_info']['international_driving_permit_label'] }}</div>
                         @endif
                         @include('adminv2.country-website.risk-rows', ['entries' => $infra])
                     </article>
@@ -357,7 +360,7 @@
                     </article>
                 @endif
             </div>
-            @if (empty($c['airlines']) && empty($c['airports']) && empty($c['taxi_apps']) && empty($c['travel_info']['driving_side_label']) && ! $infra)
+            @if (empty($c['airlines']) && empty($c['airports']) && empty($c['taxi_apps']) && empty($c['travel_info']['driving_side_label']) && empty($c['travel_info']['international_driving_permit_label']) && ! $infra)
                 @include('adminv2.country-website.empty', ['text' => 'Zum Transport liegen noch keine Angaben vor.'])
             @endif
         </div>
@@ -370,6 +373,9 @@
                 <article class="rounded-3xl bg-gradient-to-br from-[#0b3250] to-[#13507d] p-6 text-white shadow-sm">
                     <div class="text-xs uppercase tracking-widest text-white/60">Währung</div>
                     <div class="mt-1 flex items-baseline gap-3"><span class="text-5xl font-bold">{{ $c['currency']['symbol'] ?? $c['currency']['code'] }}</span><span class="text-lg">{{ $c['currency']['name'] }} ({{ $c['currency']['code'] }})</span></div>
+                    @if (! empty($c['currency']['notes']))
+                        <p class="mt-3 text-sm leading-relaxed text-white/90">{{ $c['currency']['notes'] }}</p>
+                    @endif
                     @if ($c['currency']['code'] === 'EUR')
                         <p class="mt-4 text-sm text-white/80">Hier wird mit Euro bezahlt – keine Umrechnung nötig.</p>
                     @elseif ($rate)
@@ -506,8 +512,8 @@
         @endif
     </section>
 
-    {{-- ===================== Visa / Gesundheit ===================== --}}
-    @foreach (['visa' => ['entry', 'Einreise & Visum', 'Zu Einreise und Visum liegen noch keine Angaben vor.'], 'health' => ['health', 'Gesundheit', 'Zur Gesundheit liegen noch keine Angaben vor.']] as $panel => [$category, $heading, $emptyText])
+    {{-- ===================== Einfuhr / Gesundheit ===================== --}}
+    @foreach (['customs' => ['customs', 'Einfuhrbestimmungen', 'Zu den Einfuhrbestimmungen liegen noch keine Angaben vor.'], 'health' => ['health', 'Gesundheit', 'Zur Gesundheit liegen noch keine Angaben vor.']] as $panel => [$category, $heading, $emptyText])
         <section class="tab-panel" data-panel="{{ $panel }}">
             @php $entries = $riskEntries($category); @endphp
             @if ($entries)

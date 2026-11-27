@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class City extends Model
 {
@@ -34,6 +34,34 @@ class City extends Model
         'is_regional_capital' => 'boolean',
         'is_major' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        // Das Land liegt auf der Karte bei seiner Hauptstadt – aendert sich die
+        // Hauptstadt oder ihre Lage, zieht das Land mit.
+        static::saved(function (City $city) {
+            if (! $city->wasRecentlyCreated && ! $city->wasChanged(['is_capital', 'is_regional_capital', 'region_id', 'country_id', 'lat', 'lng'])) {
+                return;
+            }
+
+            if (! $city->is_capital && ! $city->getOriginal('is_capital')) {
+                return;
+            }
+
+            $city->country?->syncCoordinatesFromCapital();
+
+            $previousCountry = $city->getOriginal('country_id');
+            if ($city->wasChanged('country_id') && $previousCountry) {
+                Country::find($previousCountry)?->syncCoordinatesFromCapital();
+            }
+        });
+
+        static::deleted(function (City $city) {
+            if ($city->is_capital) {
+                $city->country?->syncCoordinatesFromCapital();
+            }
+        });
+    }
 
     /**
      * Get the country for this city.
@@ -86,6 +114,7 @@ class City extends Model
     public function getName(string $language = 'de'): string
     {
         $translations = $this->name_translations ?? [];
+
         return $translations[$language] ?? $translations['en'] ?? 'Unknown';
     }
 

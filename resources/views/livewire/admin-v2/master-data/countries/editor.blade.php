@@ -12,7 +12,7 @@
     $noteLocales = CountryRiskProfile::noteLocales();
     $sourceLocale = CustomEvent::sourceLocale();
 
-    // Auswahl als Pillen in einer Reihe (Gebietstyp, Fahrseite).
+    // Auswahl als Pillen in einer Reihe (Fahrseite, internationaler Fuehrerschein).
     $chip = 'inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-700 transition select-none hover:border-zinc-300 '
         .'has-[:checked]:border-[var(--color-accent)] has-[:checked]:bg-[var(--color-accent)] has-[:checked]:text-[var(--color-accent-foreground)] '
         .'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-accent)]/40 '
@@ -215,6 +215,34 @@
                     <x-adminv2.ai-check-button section="details" />
                 </x-slot:actions>
                 <div x-data="{ locale: @js($sourceLocale) }" class="flex flex-col gap-6">
+                @if ($record)
+                    {{-- Hauptstadt: gepflegt bei den Staedten, hier nur angezeigt --}}
+                    @php $capital = $this->capitalCity; @endphp
+                    <div class="flex flex-col gap-2">
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <span class="text-sm font-medium text-zinc-800 dark:text-white">Hauptstadt</span>
+                            @if ($capital)
+                                <a href="{{ route('adminv2.master-data.cities.edit', $capital->id) }}" class="inline-flex items-center gap-1.5 text-sm text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-white">
+                                    <flux:icon.building-library variant="micro" class="text-zinc-400" />{{ $capital->getName('de') }}
+                                </a>
+                            @else
+                                <span class="text-sm text-zinc-500">Noch keine Stadt als Hauptstadt markiert.</span>
+                                <a href="{{ route('adminv2.master-data.cities.index', ['country' => [$record->id]]) }}" class="text-sm text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900 dark:text-zinc-300">Zu den Städten</a>
+                            @endif
+                        </div>
+                        @if ($this->extraCapitals->isNotEmpty())
+                            <flux:callout variant="warning" icon="exclamation-triangle" class="text-sm">
+                                <flux:callout.text>
+                                    {{ $this->extraCapitals->count() }} Städte sind als Hauptstadt markiert:
+                                    @foreach ($this->extraCapitals as $marked)
+                                        <a href="{{ route('adminv2.master-data.cities.edit', $marked->id) }}" class="underline underline-offset-2">{{ $marked->getName('de') }} (#{{ $marked->id }})</a>@if (! $loop->last), @endif
+                                    @endforeach
+                                    – bitte bei den falschen das Häkchen „Hauptstadt“ entfernen. Verwendet wird {{ $capital?->getName('de') }}.
+                                </flux:callout.text>
+                            </flux:callout>
+                        @endif
+                    </div>
+                @endif
                 <div class="grid gap-5 sm:grid-cols-3">
                     <flux:field>
                         <flux:label>Währungscode</flux:label>
@@ -237,6 +265,22 @@
                         @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'currency_symbol', 'basicPlaceholders' => $researchPlaceholders])
                         <flux:error name="currencySymbol" />
                     </flux:field>
+                    {{-- Hinweise zur Waehrung je Sprache; die Sprache waehlt der Umschalter weiter unten --}}
+                    @foreach (CountryTravelInfo::CURRENCY_TEXTS as $field => [$label])
+                        <div class="sm:col-span-3" wire:key="currency-text-{{ $field }}">
+                            @foreach ($noteLocales as $locale)
+                                <div x-show="locale === @js($locale)" @if ($locale !== $sourceLocale) x-cloak @endif wire:key="currency-text-{{ $field }}-{{ $locale }}">
+                                    <flux:field>
+                                        <flux:label>{{ $label }} ({{ strtoupper($locale) }})</flux:label>
+                                        <flux:textarea wire:model="travelInfo.texts.{{ $field }}.{{ $locale }}" rows="2" placeholder="{{ $locale === 'de' ? 'z. B. US-Dollar werden fast überall akzeptiert.' : '' }}" />
+                                        <flux:error name="travelInfo.texts.{{ $field }}.{{ $locale }}" />
+                                    </flux:field>
+                                    <x-adminv2.ai-field-hint key="{{ $field }}_{{ $locale }}" :review="$aiReview" />
+                                    @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => $field.'_'.$locale, 'basicPlaceholders' => $researchPlaceholders])
+                                </div>
+                            @endforeach
+                        </div>
+                    @endforeach
                     <flux:field>
                         <flux:label>Telefonvorwahl</flux:label>
                         <flux:description>Beispiel: +49</flux:description>
@@ -315,29 +359,15 @@
                 </flux:field>
 
                 <div class="flex flex-col gap-6 border-t border-zinc-100 pt-6 dark:border-zinc-800">
-                    {{-- Gebiet --}}
+                    {{-- Mutterland: nur bei abhaengigen Gebieten, z. B. Frankreich fuer Martinique --}}
                     <div class="flex flex-col gap-5">
-                        <flux:field>
-                            <flux:label>Gebietstyp</flux:label>
-                            <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Gebietstyp">
-                                @foreach (CountryTravelInfo::TERRITORY_TYPES as $value => $label)
-                                    <label wire:key="territory-{{ $value }}" class="{{ $chip }}">
-                                        <input type="radio" wire:model.live="territoryType" value="{{ $value }}" class="sr-only" />
-                                        {{ $label }}
-                                    </label>
-                                @endforeach
-                            </div>
-                            <x-adminv2.ai-field-hint key="territory_type" :review="$aiReview" />
-                            @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'territory_type', 'basicPlaceholders' => $researchPlaceholders])
-                            <flux:error name="territoryType" />
-                        </flux:field>
-                        <div x-show="$wire.territoryType !== 'sovereign'" x-cloak class="sm:max-w-md">
+                        <div class="sm:max-w-md">
                             <x-adminv2.search-select
                                 label="Mutterland"
                                 model="parentCountryId"
                                 :selected="$parentCountryId"
                                 :options="$this->parentOptions"
-                                placeholder="Kein Mutterland"
+                                placeholder="Kein Mutterland (eigenständiger Staat)"
                                 search-placeholder="Land suchen …"
                                 clearable
                             />
@@ -361,6 +391,22 @@
                         <x-adminv2.ai-field-hint key="driving_side" :review="$aiReview" />
                         @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'driving_side', 'basicPlaceholders' => $researchPlaceholders])
                         <flux:error name="drivingSide" />
+                    </flux:field>
+
+                    {{-- Internationaler Fuehrerschein: zusaetzlich zum deutschen noetig? --}}
+                    <flux:field>
+                        <flux:label>Internationaler Führerschein</flux:label>
+                        <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Internationaler Führerschein">
+                            @foreach (['' => 'Unbekannt'] + CountryTravelInfo::DRIVING_PERMITS as $value => $label)
+                                <label wire:key="driving-permit-{{ $value ?: 'none' }}" class="{{ $chip }}">
+                                    <input type="radio" wire:model="travelInfo.driving_permit" value="{{ $value }}" class="sr-only" />
+                                    {{ $label }}
+                                </label>
+                            @endforeach
+                        </div>
+                        <x-adminv2.ai-field-hint key="driving_permit" :review="$aiReview" />
+                        @include('livewire.admin-v2.partials.ai-field-research', ['researchKey' => 'driving_permit', 'basicPlaceholders' => $researchPlaceholders])
+                        <flux:error name="travelInfo.driving_permit" />
                     </flux:field>
 
                     {{-- Notrufnummern --}}
@@ -1271,7 +1317,20 @@
                 @endif
             </x-adminv2.card>
 
-            <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" :review="$aiReview" description="Mittelpunkt des Landes – dorthin setzt die Karte landesweite Ereignisse." collapsible collapse-key="country-coordinates">
+            @if ($this->capitalCoordinates)
+                {{-- Punkt des Landes = Hauptstadt, wie bei landesweiten Ereignissen --}}
+                <x-adminv2.card heading="Koordinaten" description="Der Punkt des Landes liegt auf der Hauptstadt – wie bei landesweiten Ereignissen." collapsible collapse-key="country-coordinates">
+                    <div class="flex flex-col gap-4">
+                        <p class="text-sm text-zinc-700 dark:text-zinc-300">
+                            Übernommen von <a href="{{ route('adminv2.master-data.cities.edit', $this->capitalCity->id) }}" class="font-medium underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">{{ $this->capitalCity->getName('de') }}</a>:
+                            <span class="font-mono tabular-nums">{{ $lat }}, {{ $lng }}</span>.
+                            Ändern lässt sich der Punkt über die Koordinaten der Hauptstadt.
+                        </p>
+                        <x-adminv2.master-data.boundary-map :url="route('adminv2.master-data.boundaries.country', $record->id)" :lat="$lat" :lng="$lng" />
+                    </div>
+                </x-adminv2.card>
+            @else
+            <x-adminv2.master-data.coordinates :lat="$lat" :lng="$lng" :review="$aiReview" :description="$record ? 'Keine Hauptstadt mit passenden Koordinaten hinterlegt – den Punkt bitte selbst setzen. Dorthin setzt die Karte landesweite Ereignisse.' : 'Sobald eine Hauptstadt hinterlegt ist, liegt der Punkt automatisch dort.'" collapsible collapse-key="country-coordinates">
                 @if ($record)
                     <livewire:admin-v2.ai-question-box area="countries" section="coordinates" :subject="$record" :title="$record->getName('de')" :key="'ai-question-coordinates'" />
                     <div class="mt-4 grid gap-3 sm:grid-cols-2">
@@ -1283,6 +1342,7 @@
                     </x-slot:map>
                 @endif
             </x-adminv2.master-data.coordinates>
+            @endif
 
             {{-- Laendergrenze: reine Anzeige --}}
             @if ($record)
