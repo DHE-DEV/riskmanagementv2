@@ -134,3 +134,19 @@ it('laesst den Punkt von Hand setzen, solange keine Hauptstadt hinterlegt ist', 
 
     expect((float) $spain->fresh()->lat)->toBe(40.5);
 });
+
+it('setzt per Migration alle Laender auf ihre Hauptstadt, auch wenn das erste schon stimmt', function () {
+    $andorra = capitalTestCountry(['name_translations' => ['de' => 'Andorra', 'en' => 'Andorra'], 'iso_code' => 'AD', 'iso3_code' => 'AND']);
+    capitalTestCity($andorra, 'Andorra la Vella', 42.506477, 1.521739);
+    $spain = capitalTestCountry();
+    capitalTestCity($spain, 'Madrid', 40.416548, -3.703096);
+
+    // Stand vor der Migration: Spanien noch in der Landesmitte.
+    DB::table('countries')->where('id', $spain->id)->update(['lat' => 40.4637, 'lng' => -3.7492]);
+
+    (require database_path('migrations/2026_11_27_095146_resync_country_coordinates_to_capital.php'))->up();
+
+    expect((float) $andorra->fresh()->lat)->toBe(42.506477)
+        ->and((float) $spain->fresh()->lat)->toBe(40.416548)
+        ->and((float) $spain->fresh()->lng)->toBe(-3.703096);
+});

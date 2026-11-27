@@ -15,9 +15,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Country::query()->withTrashed()->with('boundary')->each(
-            fn (Country $country) => $country->syncCoordinatesFromCapital()
-        );
+        // Kein Pfeil-Callback: each() bricht ab, sobald er false liefert.
+        Country::query()->withTrashed()->with('boundary')->each(function (Country $country): void {
+            $country->syncCoordinatesFromCapital();
+        });
     }
 
     public function down(): void
