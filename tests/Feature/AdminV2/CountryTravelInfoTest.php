@@ -42,6 +42,7 @@ it('speichert Mutterland, Fahrseite, Fuehrerschein und Reiseinformationen in meh
 
     Livewire::test(CountryEditor::class, ['country' => $martinique->id])
         ->assertDontSee('Gebietstyp')
+        ->assertSee('Nur bei abhängigen Gebieten')
         ->set('parentCountryId', (string) $france->id)
         ->set('drivingSide', 'right')
         ->set('travelInfo.driving_permit', 'recommended')

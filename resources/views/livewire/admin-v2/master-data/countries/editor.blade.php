@@ -361,7 +361,9 @@
                 <div class="flex flex-col gap-6 border-t border-zinc-100 pt-6 dark:border-zinc-800">
                     {{-- Mutterland: nur bei abhaengigen Gebieten, z. B. Frankreich fuer Martinique --}}
                     <div class="flex flex-col gap-5">
-                        <div class="sm:max-w-md">
+                        <div class="flex flex-col gap-2 sm:max-w-md">
+                            <flux:label>Mutterland</flux:label>
+                            <flux:description>Nur bei abhängigen Gebieten: der Staat, zu dem das Gebiet gehört – z. B. Frankreich für Martinique, Dänemark für Grönland. Bei eigenständigen Staaten leer lassen.</flux:description>
                             <x-adminv2.search-select
                                 label="Mutterland"
                                 model="parentCountryId"
